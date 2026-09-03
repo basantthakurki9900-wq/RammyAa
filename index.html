@@ -51,6 +51,11 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .data-refresh-btn { background: #334155; border: none; color: #f8fafc; padding: 4px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; font-weight: bold; }
     .data-refresh-btn:hover { background: #475569; }
+    /* सर्च इनपुट के लिए - री-रेंडर से बचाने के लिए */
+    #searchInput { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px 16px; border-radius: 12px; width: 100%; outline: none; font-size: 14px; }
+    #searchInput:focus { border-color: #fbbf24; }
+    .user-card { transition: none !important; }
+    .hidden-section { display: none; }
   </style>
 </head>
 <body>
@@ -104,9 +109,979 @@
     const ADMIN_PASSWORD = "admin123";
     const SESSION_KEY = 'tp_admin_session';
     
+    // ============ स्टेट वेरिएबल्स ============
     let users = {};
     let trashUsers = {};
     let config = {};
+    let liveTables = {};
+    let activeTab = 'home';
+    let adminSearchQuery = '';
+    let isRendering = false;
+    let renderTimeout = null;
+    let dataLoaded = false;
+    let isSearching = false; // सर्च मोड में होने पर री-रेंडर न करें
+
+    const defaultConfig = { 
+      telegramLink: "https://t.me/royalcasino", 
+      whatsappLink: "https://wa.me/919999999999", 
+      minWithdraw: 100, 
+      promoCodes: [], 
+      bankList: ["SBI", "HDFC", "ICICI", "Axis", "Other"], 
+      fakeOnline: 50, 
+      fakePlaying: 10, 
+      depositAmounts: [100, 200, 500, 1000],
+      broadcastMsg: ""
+    };
+
+    function checkSession() {
+      if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+        showAdminPanel();
+        return true;
+      }
+      return false;
+    }
+
+    function doLogin() {
+      const pass = document.getElementById('adminPass').value;
+      if (pass === ADMIN_PASSWORD) {
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        showAdminPanel();
+      } else {
+        alert('गलत पासवर्ड!');
+      }
+    }
+
+    function doLogout() {
+      if (confirm('क्या आप लॉगआउट करना चाहते हैं?')) {
+        sessionStorage.removeItem(SESSION_KEY);
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('adminPass').value = '';
+        detachListeners();
+      }
+    }
+
+    let listenersAttached = false;
+    let userListenerRef = null;
+    let trashListenerRef = null;
+    let configListenerRef = null;
+    let tablesListenerRef = null;
+
+    function detachListeners() {
+      try {
+        if (userListenerRef) { userListenerRef.off(); userListenerRef = null; }
+        if (trashListenerRef) { trashListenerRef.off(); trashListenerRef = null; }
+        if (configListenerRef) { configListenerRef.off(); configListenerRef = null; }
+        if (tablesListenerRef) { tablesListenerRef.off(); tablesListenerRef = null; }
+      } catch(e) {}
+      listenersAttached = false;
+    }
+
+    function showAdminPanel() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'flex';
+      document.getElementById('adminPanel').style.flexDirection = 'column';
+      document.getElementById('adminPanel').style.height = '100vh';
+      dataLoaded = false;
+      initFirebase();
+      setTab('home');
+    }
+
+    function initFirebase() {
+      if (!window.db) {
+        document.getElementById('liveStatus').innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> DB Error';
+        document.getElementById('contentArea').innerHTML = '<div class="card p-4 text-red-400 text-center">Firebase डेटाबेस कनेक्ट नहीं हो सका।</div>';
+        return;
+      }
+      
+      document.getElementById('liveStatus').innerHTML = '<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> कनेक्टेड';
+      detachListeners();
+      
+      try {
+        userListenerRef = window.db.ref('tp_users');
+        userListenerRef.on('value', (snapshot) => { 
+          users = snapshot.val() || {}; 
+          dataLoaded = true;
+          // अगर सर्च मोड में नहीं हैं तो ही रेंडर करें
+          if (!isSearching) {
+            scheduleRender(); 
+          }
+        });
+        
+        trashListenerRef = window.db.ref('tp_trash');
+        trashListenerRef.on('value', (snapshot) => { 
+          trashUsers = snapshot.val() || {}; 
+          if (!isSearching) scheduleRender(); 
+        });
+        
+        configListenerRef = window.db.ref('tp_config');
+        configListenerRef.on('value', (snapshot) => { 
+          if (!snapshot.val()) {
+            config = { ...defaultConfig };
+            window.db.ref('tp_config').set(config);
+          } else {
+            config = { ...defaultConfig, ...snapshot.val() };
+          }
+          if (!isSearching) scheduleRender(); 
+        });
+        
+        tablesListenerRef = window.db.ref('tp_live_tables');
+        tablesListenerRef.on('value', (snapshot) => {
+          liveTables = snapshot.val() || {};
+          if (!isSearching) scheduleRender();
+        });
+        
+        listenersAttached = true;
+      } catch (e) {
+        console.error("Firebase listener error:", e);
+        document.getElementById('contentArea').innerHTML = '<div class="card p-4 text-red-400 text-center">डेटा लोड करने में त्रुटि: ' + e.message + '</div>';
+      }
+    }
+
+    // ============ रेंडर थ्रॉटलिंग ============
+    function scheduleRender() {
+      // अगर सर्च मोड में हैं तो रेंडर न करें
+      if (isSearching) return;
+      
+      if (renderTimeout) {
+        clearTimeout(renderTimeout);
+        renderTimeout = null;
+      }
+      renderTimeout = setTimeout(() => {
+        renderTimeout = null;
+        safeRender();
+      }, 500);
+    }
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
+    function safeRender() {
+      if (isRendering) return;
+      if (isSearching) return; // सर्च मोड में रेंडर न करें
+      
+      const active = document.activeElement;
+      const isInputFocused = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+      
+      if (isInputFocused) {
+        const activeId = active.id;
+        const activeValue = active.value;
+        const selectionStart = active.selectionStart;
+        const selectionEnd = active.selectionEnd;
+        
+        renderContent();
+        
+        requestAnimationFrame(() => {
+          const newEl = document.getElementById(activeId);
+          if (newEl) {
+            newEl.focus();
+            if (newEl.setSelectionRange && selectionStart !== null) {
+              try { newEl.setSelectionRange(selectionStart, selectionEnd); } catch(e) {}
+            }
+          }
+        });
+      } else {
+        renderContent();
+      }
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      document.getElementById('toastMsg').innerText = msg;
+      container.classList.remove('hidden');
+      setTimeout(() => container.classList.add('hidden'), 2500);
+    }
+
+    function saveUserToDB(id, data) { 
+      if(window.db) window.db.ref('tp_users/' + id).update(data).catch(e => alert("DB Error: " + e.message)); 
+      if (!isSearching) scheduleRender(); 
+    }
+    
+    function saveConfigToDB() { 
+      if(window.db) window.db.ref('tp_config').set(config).catch(e => alert("Config Save Error: " + e.message));  
+      if (!isSearching) scheduleRender(); 
+    }
+
+    function setTab(tab) { 
+      activeTab = tab; 
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); 
+      const navEl = document.getElementById('nav_' + tab);
+      if (navEl) navEl.classList.add('active'); 
+      
+      // सर्च मोड बंद करें
+      isSearching = false;
+      adminSearchQuery = '';
+      
+      if (renderTimeout) {
+        clearTimeout(renderTimeout);
+        renderTimeout = null;
+      }
+      renderContent(); 
+    }
+    
+    // ============ सर्च फंक्शन - फोकस और टाइपिंग के दौरान री-रेंडर न करें ============
+    function startSearch() {
+      isSearching = true;
+      // सर्च इनपुट पर ध्यान दें
+      const input = document.getElementById('searchInput');
+      if (input) {
+        setTimeout(() => {
+          input.focus();
+          input.select();
+        }, 50);
+      }
+    }
+    
+    function adminSearch() { 
+      const el = document.getElementById('searchInput'); 
+      if (el) {
+        adminSearchQuery = el.value.toLowerCase().trim();
+        // सर्च रिजल्ट दिखाएं - सीधे DOM अपडेट करें
+        renderSearchResults();
+      }
+    }
+    
+    function renderSearchResults() {
+      const area = document.getElementById('contentArea');
+      if (!area) return;
+      
+      isRendering = true;
+      try {
+        area.innerHTML = renderUsers();
+      } catch(e) {
+        area.innerHTML = `<div class="card p-4 text-red-400 text-center">Error: ${escapeHtml(e.message)}</div>`;
+        console.error("Render Error:", e);
+      }
+      isRendering = false;
+    }
+    
+    function exitSearch() {
+      isSearching = false;
+      adminSearchQuery = '';
+      renderContent();
+    }
+    
+    // सर्च इनपुट पर एंटर प्रेस पर सर्च करें
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'searchInput') {
+        adminSearch();
+      }
+      if (e.key === 'Escape' && isSearching) {
+        exitSearch();
+      }
+    });
+
+    function refreshData() {
+      detachListeners();
+      document.getElementById('contentArea').innerHTML = `
+        <div class="text-center text-gray-400 p-10 flex flex-col items-center gap-3">
+          <div class="loading-spinner"></div>
+          <div>डेटा रीफ्रेश हो रहा है...</div>
+        </div>
+      `;
+      isSearching = false;
+      adminSearchQuery = '';
+      setTimeout(() => {
+        initFirebase();
+        showToast("डेटा रीफ्रेश हो गया!");
+      }, 500);
+    }
+
+    function renderContent() { 
+      if (isRendering) return;
+      if (isSearching) return; // सर्च मोड में रेंडर न करें
+      
+      isRendering = true;
+      const area = document.getElementById('contentArea');
+      try {
+        if (!dataLoaded) {
+          area.innerHTML = `
+            <div class="text-center text-gray-400 p-10 flex flex-col items-center gap-3">
+              <div class="loading-spinner"></div>
+              <div>डेटा लोड हो रहा है...</div>
+            </div>
+          `;
+          isRendering = false;
+          return;
+        }
+        
+        if (activeTab === 'home') area.innerHTML = renderHome(); 
+        else if (activeTab === 'users') area.innerHTML = renderUsers(); 
+        else if (activeTab === 'deposits') area.innerHTML = renderDeposits(); 
+        else if (activeTab === 'withdrawals') area.innerHTML = renderWithdrawals(); 
+        else if (activeTab === 'trash') area.innerHTML = renderTrash(); 
+        else area.innerHTML = '<div class="card p-4 text-center text-gray-400">पेज नहीं मिला</div>';
+      } catch(e) {
+        area.innerHTML = `<div class="card p-4 text-red-400 text-center">Error: ${escapeHtml(e.message)}</div>`;
+        console.error("Render Error:", e);
+      }
+      isRendering = false;
+    }
+
+    // ============ RENDER FUNCTIONS ============
+    function renderHome() {
+      let today = 0, month = 0, online = 0, playing = 0, pendingCount = 0;
+      let totalBalance = 0;
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      
+      Object.values(users).forEach(u => {
+        if (u.createdAt) { if (u.createdAt >= startOfToday) today++; if (u.createdAt >= startOfMonth) month++; }
+        if (u.isOnline) online++;
+        if (u.isPlaying) playing++;
+        totalBalance += (u.balance || 0);
+        if (Array.isArray(u.withdrawHistory)) { pendingCount += u.withdrawHistory.filter(tx => tx.status === 'Pending').length; }
+      });
+
+      let pendingHtml = '';
+      Object.values(users).forEach(user => {
+        (user.withdrawHistory || []).forEach(tx => {
+          if (tx.status === 'Pending') {
+            const bank = user.bankDetails || {};
+            pendingHtml += `<div class="bg-slate-900 p-3 rounded-lg border border-red-500/30 mb-2"><div class="flex justify-between items-center mb-2"><div class="text-sm"><div class="font-bold text-white">${escapeHtml(user.name || 'N/A')}</div><div class="text-yellow-400 font-mono text-xs">₹${tx.amount || 0} | ${escapeHtml(user.mobile || 'N/A')}</div></div><div class="flex gap-1"><button onclick="approveWithdraw('${user.id}', ${tx.txId})" class="btn-action bg-green-600">✅</button><button onclick="rejectWithdraw('${user.id}', ${tx.txId})" class="btn-action bg-red-600">❌</button></div></div><div class="bg-slate-800 p-2 rounded text-xs text-gray-400 mt-1"><div>🏦 ${escapeHtml(bank.bankName || 'N/A')}</div><div>👤 ${escapeHtml(bank.accName || 'N/A')}</div><div>🔢 ${escapeHtml(bank.accNumber || 'N/A')}</div><div>🏷️ ${escapeHtml(bank.ifsc || 'N/A')}</div></div></div>`;
+          }
+        });
+      });
+
+      let promoHtml = (config.promoCodes || []).map(p => `<div class="bg-slate-900 p-2 rounded-lg flex justify-between items-center text-xs mb-1 border ${p.isActive ? 'border-green-500/50' : 'border-red-500/50'}"><div><div class="font-bold text-white">${escapeHtml(p.code)}</div><div class="text-green-400">₹${p.amount}</div></div><div class="flex gap-1"><button onclick="togglePromo('${escapeHtml(p.code)}')" class="btn-sm ${p.isActive ? 'bg-yellow-600' : 'bg-green-600'}">${p.isActive ? 'बंद' : 'चालू'}</button><button onclick="deletePromo('${escapeHtml(p.code)}')" class="btn-sm bg-red-600">डिलीट</button></div></div>`).join('');
+      
+      let bankListHtml = (config.bankList || []).map(b => `<div class="bg-slate-900 p-2 rounded-lg flex justify-between items-center text-xs mb-1 border border-blue-500/30"><div class="text-white">${escapeHtml(b)}</div><button onclick="deleteBank('${escapeHtml(b)}')" class="btn-sm bg-red-600">हटाएं</button></div>`).join('');
+      
+      let depoAmountsHtml = (config.depositAmounts || []).map(a => `<div class="bg-slate-900 p-2 rounded-lg flex justify-between items-center text-xs mb-1 border border-green-500/30"><div class="text-white">₹${a}</div><button onclick="deleteDepositAmount(${a})" class="btn-sm bg-red-600">हटाएं</button></div>`).join('');
+
+      let liveTablesHtml = '';
+      const tableCount = Object.keys(liveTables).length;
+      if (tableCount > 0) {
+        Object.entries(liveTables).forEach(([id, t]) => {
+          const playerCount = t.players ? t.players.length : 0;
+          liveTablesHtml += `<div class="bg-slate-900 p-2 rounded-lg flex justify-between items-center text-xs mb-1 border border-purple-500/30"><div><div class="font-bold text-white">बूट: ₹${t.bootAmount || 0}</div><div class="text-gray-400">${playerCount} खिलाड़ी | ${escapeHtml(t.phase || 'N/A')}</div></div><button onclick="deleteTable('${id}')" class="btn-sm bg-red-600">हटाएं</button></div>`;
+        });
+      } else {
+        liveTablesHtml = '<p class="text-gray-500 text-xs">कोई लाइव टेबल नहीं है।</p>';
+      }
+
+      return `
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="card p-3 rounded-xl text-center"><div class="text-xs text-gray-400">आज जॉइन</div><div class="text-2xl font-bold text-green-500">${today}</div></div>
+          <div class="card p-3 rounded-xl text-center"><div class="text-xs text-gray-400">कुल यूजर</div><div class="text-2xl font-bold text-yellow-500">${Object.keys(users).length}</div></div>
+          <div class="card p-3 rounded-xl text-center"><div class="text-xs text-gray-400">ऑनलाइन</div><div class="text-2xl font-bold text-blue-500">${online + (config.fakeOnline || 0)}</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <div class="card p-3 rounded-xl text-center"><div class="text-xs text-gray-400">गेम खेल रहे हैं</div><div class="text-2xl font-bold text-purple-500">${playing + (config.fakePlaying || 0)}</div></div>
+          <div class="card p-3 rounded-xl text-center border border-red-500/30"><div class="text-xs text-gray-400">पेंडिंग विड्रॉल</div><div class="text-2xl font-bold text-red-500">${pendingCount}</div></div>
+        </div>
+        <div class="card p-3 rounded-xl mb-6 text-center">
+          <div class="text-xs text-gray-400">सभी यूजर्स का कुल बैलेंस</div>
+          <div class="text-2xl font-bold text-green-500">₹${totalBalance.toLocaleString('en-IN')}</div>
+        </div>
+
+        <div class="card p-3 rounded-xl mb-6 border-2 border-red-500/50 bg-red-900/10">
+          <h3 class="text-sm font-bold text-red-400 mb-2">🧹 डेटाबेस सफाई (Database Cleanup)</h3>
+          <p class="text-[10px] text-gray-400 mb-3">नीचे दिए गए बटनों का उपयोग करके फालतू डेटा को हटाएं।</p>
+          <div class="flex flex-col gap-2">
+            <button onclick="deleteGhostUsers()" class="w-full bg-red-600 text-sm py-2 rounded-lg font-bold flex justify-center items-center gap-2">🚫 Unknown / फालतू यूजर्स हटाएं</button>
+            <button onclick="clearAllHistory('gameHistory')" class="w-full bg-orange-600 text-sm py-2 rounded-lg font-bold flex justify-center items-center gap-2">🎮 सभी गेम हिस्ट्री हटाएं</button>
+            <button onclick="clearAllHistory('depositHistory')" class="w-full bg-blue-600 text-sm py-2 rounded-lg font-bold flex justify-center items-center gap-2">⬇️ सभी डिपॉजिट हिस्ट्री हटाएं</button>
+            <button onclick="clearAllHistory('withdrawHistory')" class="w-full bg-yellow-600 text-sm py-2 rounded-lg font-bold flex justify-center items-center gap-2">⬆️ सभी विड्रॉल हिस्ट्री हटाएं</button>
+            <button onclick="emptyTrash()" class="w-full bg-gray-600 text-sm py-2 rounded-lg font-bold flex justify-center items-center gap-2">🗑️ सभी डिब्बे (Trash) को खाली करें</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 mb-6">
+          <div class="card p-3 rounded-xl">
+            <h3 class="text-sm font-bold text-red-400 mb-2">📢 ब्रॉडकास्ट मैसेज</h3>
+            <input type="text" id="broadcastInput" value="${escapeHtml(config.broadcastMsg || '')}" placeholder="सभी यूजर्स को मैसेज भेजें" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+            <button onclick="updateBroadcast()" class="w-full bg-red-600 text-sm py-2 rounded-lg font-bold">मैसेज भेजें</button>
+          </div>
+
+          <div class="card p-3 rounded-xl">
+            <h3 class="text-sm font-bold text-purple-400 mb-2">🛠️ टेबल्स मैनेजमेंट</h3>
+            <button onclick="resetTables()" class="w-full bg-purple-600 text-sm py-2 rounded-lg font-bold mb-2">सभी लाइव टेबल्स रीसेट करें</button>
+            <div class="mt-2">
+              <div class="text-xs text-gray-400 mb-1">लाइव टेबल्स (${tableCount}):</div>
+              ${liveTablesHtml}
+            </div>
+          </div>
+
+          <div class="card p-3 rounded-xl flex gap-2 items-center">
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-blue-400 mb-1">✈️ टेलीग्राम लिंक</h3>
+              <input type="text" id="telegramInput" value="${escapeHtml(config.telegramLink || '')}" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+            </div>
+            <button onclick="updateTelegram()" class="bg-blue-600 text-sm px-4 py-2 rounded-lg font-bold h-10 mt-5">अपडेट</button>
+          </div>
+          <div class="card p-3 rounded-xl flex gap-2 items-center">
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-green-400 mb-1">💬 व्हाट्सएप लिंक</h3>
+              <input type="text" id="whatsappInput" value="${escapeHtml(config.whatsappLink || '')}" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+            </div>
+            <button onclick="updateWhatsapp()" class="bg-green-600 text-sm px-4 py-2 rounded-lg font-bold h-10 mt-5">अपडेट</button>
+          </div>
+          <div class="card p-3 rounded-xl flex gap-2 items-center">
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-purple-400 mb-1">⚙️ फेक ऑनलाइन यूजर्स</h3>
+              <input type="number" id="fakeOnlineInput" value="${config.fakeOnline || 0}" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+            </div>
+            <button onclick="updateFakeOnline()" class="bg-purple-600 text-sm px-4 py-2 rounded-lg font-bold h-10 mt-5">सेट</button>
+          </div>
+          <div class="card p-3 rounded-xl flex gap-2 items-center">
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-pink-400 mb-1">⚙️ फेक गेमिंग यूजर्स</h3>
+              <input type="number" id="fakePlayingInput" value="${config.fakePlaying || 0}" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+            </div>
+            <button onclick="updateFakePlaying()" class="bg-pink-600 text-sm px-4 py-2 rounded-lg font-bold h-10 mt-5">सेट</button>
+          </div>
+          <div class="card p-3 rounded-xl">
+            <h3 class="text-sm font-bold text-red-400 mb-2">💰 मिनिमम विड्रॉल</h3>
+            <div class="flex gap-2">
+              <input type="number" id="minWithdrawInput" value="${config.minWithdraw || 100}" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+              <button onclick="updateMinWithdraw()" class="bg-red-600 text-sm px-4 py-2 rounded-lg font-bold">सेट</button>
+            </div>
+          </div>
+          
+          <div class="card p-3 rounded-xl">
+            <h3 class="text-sm font-bold text-green-400 mb-2">🏦 बैंक लिस्ट अपडेट करें</h3>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="newBankInput" placeholder="नया बैंक नाम दर्ज करें" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+              <button onclick="addBank()" class="bg-green-600 text-sm px-4 py-2 rounded-lg font-bold">जोड़ें</button>
+            </div>
+            <div class="mt-2">${bankListHtml || '<p class="text-gray-500 text-xs">कोई बैंक नहीं है।</p>'}</div>
+          </div>
+
+          <div class="card p-3 rounded-xl">
+            <h3 class="text-sm font-bold text-green-400 mb-2">💰 डिपॉजिट अमाउंट सेट करें</h3>
+            <p class="text-[10px] text-gray-400 mb-2">ये अमाउंट यूजर के वॉलेट में बटन के रूप में दिखेंगे।</p>
+            <div class="flex gap-2 mb-2">
+              <input type="number" id="newDepositAmountInput" placeholder="जैसे: 100, 500" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+              <button onclick="addDepositAmount()" class="bg-green-600 text-sm px-4 py-2 rounded-lg font-bold">जोड़ें</button>
+            </div>
+            <div class="mt-2">${depoAmountsHtml || '<p class="text-gray-500 text-xs">कोई अमाउंट सेट नहीं है।</p>'}</div>
+          </div>
+
+          <div class="card p-3 rounded-xl">
+            <h3 class="text-sm font-bold text-green-400 mb-2">🎁 प्रोमो कोड बनाएं</h3>
+            <input type="text" id="promoCode" placeholder="कोड" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none uppercase">
+            <input type="number" id="promoAmount" placeholder="राशि" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-900 border border-white/10 text-white text-sm outline-none">
+            <button onclick="createPromo()" class="w-full bg-green-600 text-sm py-1.5 rounded-lg font-bold">जनरेट करें</button>
+            <div class="mt-2">${promoHtml}</div>
+          </div>
+        </div>
+
+        <div class="card p-3 rounded-xl">
+          <h3 class="text-sm font-bold text-red-400 mb-2">⏳ पेंडिंग विड्रॉल (बैंक डिटेल्स सहित)</h3>
+          <div>${pendingHtml || '<p class="text-gray-500 text-xs">कोई पेंडिंग विड्रॉल नहीं है।</p>'}</div>
+        </div>
+      `;
+    }
+
+    function renderUsers() {
+      let html = `
+        <div class="flex gap-2 mb-4">
+          <div class="flex-1 relative">
+            <input type="text" id="searchInput" value="${escapeHtml(adminSearchQuery)}" placeholder="🔍 यूजर आईडी, नाम या मोबाइल सर्च करें..." 
+              class="w-full px-4 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-sm outline-none focus:border-yellow-500"
+              onfocus="startSearch()" 
+              oninput="adminSearch()" 
+              onkeydown="if(event.key==='Escape') exitSearch()">
+            ${adminSearchQuery ? `<span class="absolute right-3 top-2 text-gray-400 text-xs cursor-pointer" onclick="exitSearch()">✕</span>` : ''}
+          </div>
+          <button onclick="exitSearch()" class="bg-slate-700 text-white px-3 py-2 rounded-xl font-bold text-sm ${adminSearchQuery ? '' : 'hidden'}" id="exitSearchBtn">✕</button>
+          <button onclick="adminSearch()" class="bg-yellow-500 text-slate-900 px-4 py-2 rounded-xl font-bold text-sm">सर्च</button>
+        </div>
+        <div class="text-xs text-gray-500 mb-2" id="resultCount">${adminSearchQuery ? 'सर्च रिजल्ट: ' + Object.values(users).filter(u => (u.id && u.id.toLowerCase().includes(adminSearchQuery)) || (u.name && u.name.toLowerCase().includes(adminSearchQuery)) || (u.mobile && u.mobile.includes(adminSearchQuery))).length + ' यूजर मिले' : 'कुल ' + Object.values(users).length + ' यूजर्स'}</div>
+      `;
+      
+      let userList = Object.values(users);
+      if (adminSearchQuery) { 
+        userList = userList.filter(u => (u.id && u.id.toLowerCase().includes(adminSearchQuery)) || (u.name && u.name.toLowerCase().includes(adminSearchQuery)) || (u.mobile && u.mobile.includes(adminSearchQuery))); 
+      }
+      
+      if (userList.length === 0) return html + '<div class="card p-4 rounded-xl text-center text-gray-400 text-sm">कोई यूजर नहीं मिला...</div>';
+      
+      userList.forEach(user => {
+        let depoHtml = (user.depositHistory || []).slice().reverse().map(d => { let orderIdHtml = d.orderId ? `<br><span class="text-blue-400">ID: ${escapeHtml(d.orderId)}</span>` : ''; return `<div class="bg-slate-900 p-2 rounded flex justify-between text-xs mb-1"><span class="text-gray-400">${escapeHtml(d.time || '')} ${orderIdHtml}</span><span class="text-green-400">+₹${d.amount || 0} (${escapeHtml(d.desc || 'डिपॉजिट')})</span></div>`; }).join('');
+        let wdrlHtml = (user.withdrawHistory || []).slice().reverse().map(w => `<div class="bg-slate-900 p-2 rounded flex justify-between text-xs mb-1"><span class="text-gray-400">${escapeHtml(w.time || '')} <span class="px-1 rounded bg-yellow-500 text-black">${escapeHtml(w.status || '')}</span></span><span class="text-red-400">-₹${w.amount || 0}</span></div>`).join('');
+        let gameHistHtml = (user.gameHistory || []).slice().reverse().map((g, i) => `<div class="bg-slate-900 p-2 rounded flex justify-between text-xs mb-1"><span class="text-gray-400">${escapeHtml(g.time || '')}<button onclick="deleteGameHistoryEntry('${user.id}', ${(user.gameHistory.length - 1 - i)})" class="btn-sm bg-red-600 ml-2">हटाएं</button></span><span class="${g.result === 'Loss' ? 'text-red-400' : 'text-green-400'} font-bold">${escapeHtml(g.result)} ₹${g.amount}</span></div>`).join('');
+        
+        let refHtml = `
+          <div class="bg-slate-900 p-2 rounded-lg mb-2 border border-white/5">
+            <h4 class="text-xs text-purple-400 mb-1">🎁 रेफरल जानकारी</h4>
+            <div class="text-xs text-gray-400">कोड: <span class="text-yellow-500 font-mono">${escapeHtml(user.referralCode || 'N/A')}</span></div>
+            <div class="text-xs text-gray-400">कमाई: <span class="text-green-500 font-bold">₹${user.referralEarnings || 0}</span></div>
+            <div class="text-xs text-gray-400">द्वारा रेफर: <span class="text-yellow-500 font-mono">${escapeHtml(user.referredBy || 'कोई नहीं')}</span></div>
+            <div class="text-xs text-gray-400">रेफर काउंट: <span class="text-white font-bold">${user.referralCount || 0}</span></div>
+          </div>
+        `;
+
+        let referredListHtml = '';
+        const referredByThisUser = Object.values(users).filter(u => u.referredBy === user.referralCode);
+        if (referredByThisUser.length > 0) {
+          referredListHtml = referredByThisUser.map(ru => {
+            const totalDep = (ru.depositHistory || []).reduce((sum, d) => {
+              if (d.desc === 'Signup Bonus' || d.desc === 'Promo Code') return sum;
+              return sum + (parseInt(d.amount) || 0);
+            }, 0);
+            const isDeposited = totalDep >= 100 || ru.isReferralBonusClaimed;
+            return `
+              <div class="bg-slate-900 p-2 rounded flex justify-between items-center text-xs mb-1">
+                <div>
+                  <div class="font-bold text-white">${escapeHtml(ru.name)}</div>
+                  <div class="text-[10px] text-gray-500">${escapeHtml(ru.mobile)}</div>
+                </div>
+                <div class="text-[10px] px-2 py-1 rounded ${isDeposited ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black'}">
+                  ${isDeposited ? '₹100+ डिपॉजिट' : 'डिपॉजिट बाकी'}
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          referredListHtml = '<p class="text-gray-500 text-[10px]">किसी को भी रेफर नहीं किया है।</p>';
+        }
+        let viewRefBtn = `<button onclick="toggleReferrals('${user.id}')" class="w-full bg-slate-700 text-xs py-1.5 rounded-lg font-bold mb-2 active:scale-95 transition-transform">🎁 रेफरल्स देखें (${referredByThisUser.length})</button>`;
+        let viewRefDiv = `<div id="ref_${user.id}" class="hidden bg-slate-950 p-2 rounded-lg mb-2">${referredListHtml}</div>`;
+
+        let balance = user.balance || 0;
+        let wdBalance = user.withdrawableBalance || 0;
+        let safePass = (user.password || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        html += `<div class="card p-3 rounded-xl mb-3 text-sm user-card">
+          <div class="flex justify-between items-center mb-2">
+            <div>
+              <h3 class="font-bold text-yellow-400">${escapeHtml(user.name || 'Unknown')} ${user.isBlocked ? '<span class="text-[10px] bg-red-600 px-1 rounded">BLOCKED</span>' : ''}</h3>
+              <p class="text-xs text-gray-400">${escapeHtml(user.id || 'N/A')} | ${escapeHtml(user.mobile || 'N/A')}</p>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-bold text-green-500">₹${balance.toLocaleString('en-IN')}</div>
+              <div class="text-[10px] text-yellow-500">विड्रॉल योग्य: ₹${Math.min(wdBalance, balance).toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+
+          <button onclick="toggleHistory('${user.id}')" class="w-full bg-slate-700 text-xs py-1.5 rounded-lg font-bold mb-2 active:scale-95 transition-transform">📜 डिपॉजिट/विड्रॉल हिस्ट्री देखें</button>
+          <div id="history_${user.id}" class="hidden bg-slate-950 p-2 rounded-lg mb-2">
+            <h4 class="text-xs text-green-400 mb-1">डिपॉजिट हिस्ट्री:</h4>${depoHtml || '<p class="text-gray-500 text-[10px]">कोई डिपॉजिट नहीं</p>'}
+            <h4 class="text-xs text-red-400 mt-2 mb-1">विड्रॉल हिस्ट्री:</h4>${wdrlHtml || '<p class="text-gray-500 text-[10px]">कोई विड्रॉल नहीं</p>'}
+          </div>
+
+          <button onclick="toggleGameHistory('${user.id}')" class="w-full bg-slate-700 text-xs py-1.5 rounded-lg font-bold mb-2 active:scale-95 transition-transform">🎮 गेमिंग हिस्ट्री देखें</button>
+          <div id="gameHist_${user.id}" class="hidden bg-slate-950 p-2 rounded-lg mb-2">
+            ${gameHistHtml || '<p class="text-gray-500 text-[10px]">कोई गेम हिस्ट्री नहीं</p>'}
+          </div>
+
+          ${viewRefBtn}
+          ${viewRefDiv}
+
+          ${refHtml}
+
+          <div class="flex gap-1 mb-2 flex-wrap">
+            <button onclick="toggleBlock('${user.id}')" class="btn-action ${user.isBlocked ? 'bg-green-600' : 'bg-orange-600'} text-xs">${user.isBlocked ? 'अनब्लॉक' : 'ब्लॉक'}</button>
+            <button onclick="deleteUserToTrash('${user.id}')" class="btn-action bg-red-700 text-xs">डिब्बे में भेजें</button>
+          </div>
+          <div class="bg-slate-900 p-2 rounded-lg mb-2">
+            <h4 class="text-xs text-gray-400 mb-1">बैलेंस बदलें</h4>
+            <div class="flex gap-1">
+              <input type="number" id="amt_${user.id}" placeholder="राशि" class="w-full px-2 py-1 text-xs rounded bg-slate-800 border border-white/10 text-white outline-none">
+              <button onclick="adjustBalance('${user.id}', 'add')" class="btn-action bg-green-600 text-xs">+</button>
+              <button onclick="adjustBalance('${user.id}', 'sub')" class="btn-action bg-red-600 text-xs">-</button>
+            </div>
+          </div>
+          <div class="bg-slate-900 p-2 rounded-lg mb-2">
+            <h4 class="text-xs text-gray-400 mb-1">पासवर्ड बदलें</h4>
+            <div class="flex gap-1">
+              <input type="text" id="pass_${user.id}" value="${safePass}" class="w-full px-2 py-1 text-xs rounded bg-slate-800 border border-white/10 text-white outline-none">
+              <button onclick="changePass('${user.id}')" class="btn-action bg-blue-600 text-xs">सेव</button>
+            </div>
+          </div>
+          <div class="bg-slate-900 p-2 rounded-lg">
+            <h4 class="text-xs text-blue-400 mb-1">बैंक डिटेल्स एडिट करें</h4>
+            <input type="text" id="bankName_${user.id}" value="${escapeHtml(user.bankDetails?.bankName || '')}" placeholder="बैंक नाम" class="w-full px-2 py-1 text-xs rounded bg-slate-800 border border-white/10 text-white outline-none mb-1">
+            <input type="text" id="accName_${user.id}" value="${escapeHtml(user.bankDetails?.accName || '')}" placeholder="अकाउंट होल्डर" class="w-full px-2 py-1 text-xs rounded bg-slate-800 border border-white/10 text-white outline-none mb-1">
+            <input type="text" id="accNum_${user.id}" value="${escapeHtml(user.bankDetails?.accNumber || '')}" placeholder="अकाउंट नंबर" class="w-full px-2 py-1 text-xs rounded bg-slate-800 border border-white/10 text-white outline-none mb-1">
+            <input type="text" id="ifsc_${user.id}" value="${escapeHtml(user.bankDetails?.ifsc || '')}" placeholder="IFSC" class="w-full px-2 py-1 text-xs rounded bg-slate-800 border border-white/10 text-white outline-none mb-1">
+            <button onclick="editBank('${user.id}')" class="btn-action bg-blue-600 text-xs w-full">बैंक डिटेल्स अपडेट करें</button>
+          </div>
+        </div>`;
+      });
+      return html;
+    }
+
+    function renderDeposits() {
+      let deposits = [];
+      Object.values(users).forEach(u => { 
+        if (Array.isArray(u.depositHistory)) {
+          u.depositHistory.forEach(d => deposits.push({ ...d, user: u.name, mobile: u.mobile, userId: u.id })); 
+        }
+      });
+      deposits.sort((a, b) => {
+        const timeA = a.ts || new Date(a.time).getTime() || 0;
+        const timeB = b.ts || new Date(b.time).getTime() || 0;
+        return timeB - timeA;
+      });
+      if (deposits.length === 0) return '<div class="card p-4 rounded-xl text-center text-gray-400 text-sm">कोई डिपॉजिट नहीं मिला।</div>';
+      return deposits.map(d => `<div class="card p-3 rounded-xl mb-2 flex justify-between items-center text-sm"><div><div class="font-bold text-white">${escapeHtml(d.user || 'N/A')} <span class="text-xs text-gray-500">(${escapeHtml(d.mobile || 'N/A')})</span></div><div class="text-xs text-gray-400">${escapeHtml(d.desc || 'डिपॉजिट')} | ${escapeHtml(d.time || '')}</div>${d.orderId ? `<div class="text-[10px] text-blue-400">Order ID: ${escapeHtml(d.orderId)}</div>` : ''}</div><div class="font-bold text-green-500 text-lg">+ ₹${d.amount || 0}</div></div>`).join('');
+    }
+
+    function renderWithdrawals() {
+      let withdrawals = [];
+      Object.values(users).forEach(u => { 
+        if (Array.isArray(u.withdrawHistory)) {
+          u.withdrawHistory.forEach(w => withdrawals.push({ ...w, user: u.name, mobile: u.mobile, userId: u.id, bankDetails: u.bankDetails })); 
+        }
+      });
+      withdrawals.sort((a, b) => {
+        const timeA = a.ts || new Date(a.time).getTime() || 0;
+        const timeB = b.ts || new Date(b.time).getTime() || 0;
+        return timeB - timeA;
+      });
+      if (withdrawals.length === 0) return '<div class="card p-4 rounded-xl text-center text-gray-400 text-sm">कोई विड्रॉल नहीं मिला।</div>';
+      
+      return withdrawals.map(w => { 
+        const bank = w.bankDetails || {};
+        let actionButtons = w.status === 'Pending' ? `<div class="flex flex-col gap-1"><button onclick="approveWithdraw('${w.userId}', ${w.txId})" class="btn-action bg-green-600 text-xs">सफल</button><button onclick="rejectWithdraw('${w.userId}', ${w.txId})" class="btn-action bg-red-600 text-xs">रिजेक्ट</button></div>` : '';
+        return `<div class="card p-3 rounded-xl mb-2 text-sm">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <div class="font-bold text-white">${escapeHtml(w.user || 'N/A')} <span class="text-xs text-gray-500">(${escapeHtml(w.mobile || 'N/A')})</span></div>
+              <div class="text-xs text-gray-400">ID: ${escapeHtml(w.userId || 'N/A')} | ₹${w.amount || 0} | ${escapeHtml(w.time || '')}</div>
+              <span class="text-[10px] px-2 py-0.5 rounded ${w.status === 'Approved' ? 'bg-green-600' : w.status === 'Rejected' ? 'bg-red-600' : 'bg-yellow-600'} text-white font-bold mt-1 inline-block">${escapeHtml(w.status)}</span>
+            </div>
+            ${actionButtons}
+          </div>
+          <div class="bg-slate-900 p-2 rounded-lg text-xs text-gray-300 border border-slate-700 mt-2">
+            <div class="text-[10px] text-gray-400 mb-1 font-bold">🏦 बैंक डिटेल्स:</div>
+            <div>👤 नाम: ${escapeHtml(bank.accName || 'N/A')}</div>
+            <div>🔢 अकाउंट नंबर: ${escapeHtml(bank.accNumber || 'N/A')}</div>
+            <div>🏦 बैंक: ${escapeHtml(bank.bankName || 'N/A')}</div>
+            <div>🏷️ IFSC: ${escapeHtml(bank.ifsc || 'N/A')}</div>
+          </div>
+        </div>`; 
+      }).join('');
+    }
+
+    function renderTrash() {
+      let trashUsersHtml = Object.values(trashUsers).map(u => `
+        <div class="card p-2 rounded-lg mb-2 flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-yellow-400 text-sm">${escapeHtml(u.name || 'N/A')}</h3>
+            <p class="text-xs text-gray-400">${escapeHtml(u.id || 'N/A')} | ${escapeHtml(u.mobile || 'N/A')}</p>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="restoreUser('${u.id}')" class="btn-action bg-green-600 text-xs">वापस लाएं</button>
+            <button onclick="deleteUserPermanently('${u.id}')" class="btn-action bg-red-700 text-xs">पक्का डिलीट</button>
+          </div>
+        </div>
+      `).join('');
+
+      let allDeposits = [];
+      Object.values(users).forEach(u => {
+        if (Array.isArray(u.depositHistory)) {
+          u.depositHistory.forEach((d, idx) => allDeposits.push({ ...d, userId: u.id, userName: u.name, originalIndex: idx }));
+        }
+      });
+      allDeposits.sort((a, b) => (b.ts || new Date(b.time).getTime() || 0) - (a.ts || new Date(a.time).getTime() || 0));
+      let depHtml = allDeposits.slice(0, 30).map(d => `
+        <div class="bg-slate-900 p-2 rounded flex justify-between items-center text-xs mb-1">
+          <span class="text-gray-400">${escapeHtml(d.userName)}: ₹${d.amount} (${escapeHtml(d.time)})</span>
+          <button onclick="deleteDepositEntry('${d.userId}', ${d.originalIndex})" class="btn-sm bg-red-600">हटाएं</button>
+        </div>
+      `).join('');
+
+      let allWds = [];
+      Object.values(users).forEach(u => {
+        if (Array.isArray(u.withdrawHistory)) {
+          u.withdrawHistory.forEach((w, idx) => allWds.push({ ...w, userId: u.id, userName: u.name, originalIndex: idx }));
+        }
+      });
+      allWds.sort((a, b) => (b.ts || new Date(b.time).getTime() || 0) - (a.ts || new Date(a.time).getTime() || 0));
+      let wdHtml = allWds.slice(0, 30).map(w => `
+        <div class="bg-slate-900 p-2 rounded flex justify-between items-center text-xs mb-1">
+          <span class="text-gray-400">${escapeHtml(w.userName)}: ₹${w.amount} (${escapeHtml(w.status)})</span>
+          <button onclick="deleteWithdrawalEntry('${w.userId}', ${w.originalIndex})" class="btn-sm bg-red-600">हटाएं</button>
+        </div>
+      `).join('');
+
+      return `
+        <div class="card p-3 rounded-xl mb-4">
+          <h3 class="text-sm font-bold text-red-400 mb-2">🗑️ हटाए गए यूजर्स (Restore / Delete)</h3>
+          ${trashUsersHtml || '<p class="text-gray-500 text-xs">डिब्बा खाली है।</p>'}
+        </div>
+        <div class="card p-3 rounded-xl mb-4">
+          <h3 class="text-sm font-bold text-green-400 mb-2">💸 डिपॉजिट हिस्ट्री हटाने वाला डिब्बा</h3>
+          ${depHtml || '<p class="text-gray-500 text-xs">कोई डिपॉजिट नहीं मिला।</p>'}
+        </div>
+        <div class="card p-3 rounded-xl mb-4">
+          <h3 class="text-sm font-bold text-yellow-400 mb-2">📝 विड्रॉल हिस्ट्री हटाने वाला डिब्बा</h3>
+          ${wdHtml || '<p class="text-gray-500 text-xs">कोई विड्रॉल नहीं मिला।</p>'}
+        </div>
+      `;
+    }
+
+    // ============ ACTION FUNCTIONS ============
+    function updateTelegram() { config.telegramLink = document.getElementById('telegramInput').value; saveConfigToDB(); showToast("टेलीग्राम लिंक अपडेट हो गया!"); }
+    function updateWhatsapp() { config.whatsappLink = document.getElementById('whatsappInput').value; saveConfigToDB(); showToast("व्हाट्सएप लिंक अपडेट हो गया!"); }
+    function updateFakeOnline() { config.fakeOnline = parseInt(document.getElementById('fakeOnlineInput').value) || 0; saveConfigToDB(); showToast("ऑनलाइन यूजर्स अपडेट हो गए!"); }
+    function updateFakePlaying() { config.fakePlaying = parseInt(document.getElementById('fakePlayingInput').value) || 0; saveConfigToDB(); showToast("गेमिंग यूजर्स अपडेट हो गए!"); }
+    function updateMinWithdraw() { config.minWithdraw = parseInt(document.getElementById('minWithdrawInput').value) || 100; saveConfigToDB(); showToast("विड्रॉल लिमिट सेट हो गई!"); }
+    function updateBroadcast() { config.broadcastMsg = document.getElementById('broadcastInput').value; saveConfigToDB(); showToast("ब्रॉडकास्ट मैसेज सेट हो गया!"); }
+    function resetTables() { if(window.db && confirm("क्या आप वाकई सभी लाइव टेबल्स रीसेट करना चाहते हैं?")) { window.db.ref('tp_live_tables').remove(); showToast("सभी टेबल्स रीसेट हो गए!"); } }
+    function deleteTable(id) { if(window.db && confirm("इस टेबल को हटाएं?")) { window.db.ref('tp_live_tables/' + id).remove(); showToast("टेबल हटा दिया गया!"); } }
+
+    function addBank() { const name = document.getElementById('newBankInput').value.trim(); if(!name) return alert("बैंक का नाम दर्ज करें"); if(!config.bankList) config.bankList = []; if(config.bankList.includes(name)) return alert("यह बैंक पहले से मौजूद है"); config.bankList.push(name); saveConfigToDB(); showToast("बैंक जोड़ा गया!"); document.getElementById('newBankInput').value = ''; }
+    function deleteBank(name) { config.bankList = config.bankList.filter(b => b !== name); saveConfigToDB(); showToast("बैंक हटाया गया!"); }
+    
+    function addDepositAmount() { const amt = parseInt(document.getElementById('newDepositAmountInput').value); if (!amt || amt <= 0) return alert("वैध राशि दर्ज करें"); if(!config.depositAmounts) config.depositAmounts = []; if(config.depositAmounts.includes(amt)) return alert("यह राशि पहले से मौजूद है"); config.depositAmounts.push(amt); config.depositAmounts.sort((a,b) => a-b); saveConfigToDB(); showToast("डिपॉजिट अमाउंट जोड़ा गया!"); document.getElementById('newDepositAmountInput').value = ''; }
+    function deleteDepositAmount(amt) { config.depositAmounts = (config.depositAmounts || []).filter(a => a !== amt); saveConfigToDB(); showToast("अमाउंट हटाया गया!"); }
+
+    function createPromo() { const code = document.getElementById('promoCode').value.toUpperCase().trim(); const amount = parseInt(document.getElementById('promoAmount').value); if (!code || !amount) return alert("कृपया कोड और राशि दर्ज करें"); if (!config.promoCodes) config.promoCodes = []; if (config.promoCodes.find(p => p.code === code)) return alert("यह प्रोमो कोड पहले से मौजूद है"); config.promoCodes.push({ code, amount, isActive: true }); saveConfigToDB(); showToast("प्रोमो कोड बन गया!"); document.getElementById('promoCode').value = ''; document.getElementById('promoAmount').value = ''; }
+    function togglePromo(code) { const p = config.promoCodes.find(p => p.code === code); if(p){ p.isActive = !p.isActive; saveConfigToDB(); showToast("प्रोमो स्टेटस बदला गया!"); } }
+    function deletePromo(code) { if(!confirm("प्रोमो कोड हटाएं?")) return; config.promoCodes = config.promoCodes.filter(p => p.code !== code); saveConfigToDB(); showToast("प्रोमो कोड हटाया गया!"); }
+    
+    function toggleHistory(userId) { const el = document.getElementById('history_' + userId); if(el) el.classList.toggle('hidden'); }
+    function toggleGameHistory(userId) { const el = document.getElementById('gameHist_' + userId); if(el) el.classList.toggle('hidden'); }
+    function toggleReferrals(userId) { const el = document.getElementById('ref_' + userId); if(el) el.classList.toggle('hidden'); }
+    
+    function adjustBalance(userId, type) { 
+      const amt = parseInt(document.getElementById('amt_' + userId).value); 
+      if (!amt || amt <= 0) return alert("वैध राशि दर्ज करें"); 
+      const user = users[userId];
+      if (!user) return alert("यूजर नहीं मिला");
+      
+      let updates = {};
+      if (type === 'add') {
+        updates.balance = (user.balance || 0) + amt; 
+        updates.withdrawableBalance = (user.withdrawableBalance || 0) + amt; 
+        let depHist = Array.isArray(user.depositHistory) ? user.depositHistory : [];
+        depHist.push({ amount: amt, time: new Date().toLocaleString(), ts: Date.now(), desc: 'Admin Added' });
+        updates.depositHistory = depHist.slice(-20);
+        saveUserToDB(userId, updates);
+        showToast("₹" + amt + " जोड़े गए!");
+      } else { 
+        updates.balance = Math.max(0, (user.balance || 0) - amt); 
+        updates.withdrawableBalance = Math.max(0, (user.withdrawableBalance || 0) - amt); 
+        let wdHist = Array.isArray(user.withdrawHistory) ? user.withdrawHistory : [];
+        wdHist.push({ txId: Date.now(), amount: amt, time: new Date().toLocaleString(), ts: Date.now(), status: 'Deducted by Admin' });
+        updates.withdrawHistory = wdHist.slice(-20);
+        saveUserToDB(userId, updates);
+        showToast("₹" + amt + " कटे!");
+      } 
+      document.getElementById('amt_' + userId).value = '';
+    }
+
+    function toggleBlock(userId) { 
+      const user = users[userId];
+      if (!user) return alert("यूजर नहीं मिला");
+      const newBlocked = !user.isBlocked;
+      saveUserToDB(userId, { isBlocked: newBlocked }); 
+      showToast(newBlocked ? "यूजर ब्लॉक किया गया!" : "यूजर अनब्लॉक किया गया!"); 
+    }
+    
+    function deleteUserToTrash(userId) { 
+      if (!confirm("यूजर को डिब्बे (Trash) में भेजें?")) return;
+      if (!window.db) return alert("डेटाबेस कनेक्शन नहीं है!");
+      
+      const userRef = window.db.ref('tp_users/' + userId);
+      const trashRef = window.db.ref('tp_trash/' + userId);
+      
+      userRef.once('value').then(snap => {
+        if (snap.val()) {
+          trashRef.set(snap.val()).then(() => {
+            userRef.remove().then(() => {
+              showToast("यूजर डिब्बे में चला गया!");
+            }).catch(e => alert("Remove Error: " + e.message));
+          }).catch(e => alert("Trash Set Error: " + e.message));
+        } else {
+          alert("यूजर नहीं मिला!");
+        }
+      }).catch(e => alert("Fetch Error: " + e.message));
+    }
+
+    function restoreUser(userId) {
+      if (!window.db) return alert("डेटाबेस कनेक्शन नहीं है!");
+      const trashRef = window.db.ref('tp_trash/' + userId);
+      const userRef = window.db.ref('tp_users/' + userId);
+      
+      trashRef.once('value').then(snap => {
+        if (snap.val()) {
+          userRef.set(snap.val()).then(() => {
+            trashRef.remove().then(() => {
+              showToast("यूजर वापस लाया गया!");
+            }).catch(e => alert("Remove Trash Error: " + e.message));
+          }).catch(e => alert("Restore Error: " + e.message));
+        } else {
+          alert("डिब्बे में यूजर नहीं मिला!");
+        }
+      }).catch(e => alert("Fetch Error: " + e.message));
+    }
+
+    function deleteUserPermanently(userId) {
+      if (!confirm("इस यूजर को हमेशा के लिए हटाएं? यह एक्शन वापस नहीं हो सकता!")) return;
+      if (!window.db) return alert("डेटाबेस कनेक्शन नहीं है!");
+      window.db.ref('tp_trash/' + userId).remove().then(() => {
+        showToast("यूजर पक्का डिलीट हो गया!");
+      }).catch(e => alert("Error: " + e.message));
+    }
+
+    function deleteDepositEntry(userId, idx) {
+      if (!window.db || !users[userId]) return;
+      const user = users[userId];
+      if (Array.isArray(user.depositHistory)) {
+        user.depositHistory.splice(idx, 1);
+        window.db.ref('tp_users/' + userId + '/depositHistory').set(user.depositHistory)
+          .then(() => showToast("डिपॉजिट हिस्ट्री हटाई गई!"))
+          .catch(e => alert("Error: " + e.message));
+      }
+    }
+
+    function deleteWithdrawalEntry(userId, idx) {
+      if (!window.db || !users[userId]) return;
+      const user = users[userId];
+      if (Array.isArray(user.withdrawHistory)) {
+        user.withdrawHistory.splice(idx, 1);
+        window.db.ref('tp_users/' + userId + '/withdrawHistory').set(user.withdrawHistory)
+          .then(() => showToast("विड्रॉल हिस्ट्री हटाई गई!"))
+          .catch(e => alert("Error: " + e.message));
+      }
+    }
+
+    function deleteGameHistoryEntry(userId, idx) {
+      if (!window.db || !users[userId]) return;
+      const user = users[userId];
+      if (Array.isArray(user.gameHistory)) {
+        user.gameHistory.splice(idx, 1);
+        window.db.ref('tp_users/' + userId + '/gameHistory').set(user.gameHistory)
+          .then(() => showToast("गेमिंग हिस्ट्री हटाई गई!"))
+          .catch(e => alert("Error: " + e.message));
+      }
+    }
+
+    function changePass(userId) { 
+      const newPass = document.getElementById('pass_' + userId).value; 
+      if (!newPass) return alert("पासवर्ड दर्ज करें"); 
+      saveUserToDB(userId, { password: newPass }); 
+      showToast("पासवर्ड बदला गया!"); 
+    }
+    
+    function editBank(userId) { 
+      const bankName = document.getElementById('bankName_' + userId).value; 
+      const accName = document.getElementById('accName_' + userId).value; 
+      const accNumber = document.getElementById('accNum_' + userId).value; 
+      const ifsc = document.getElementById('ifsc_' + userId).value; 
+      saveUserToDB(userId, { bankDetails: { bankName, accName, accNumber, ifsc } }); 
+      showToast("बैंक डिटेल्स अपडेट हो गई!"); 
+    }
+    
+    function approveWithdraw(userId, txId) { 
+      if (!confirm("क्या आप वाकई इस विड्रॉल रिक्वेस्ट को एक्सेप्ट (स्वीकृत) करना चाहते हैं?")) return;
+      
+      if (!window.db || !users[userId]) return alert("डेटा लोड नहीं हुआ, रिफ्रेश करें!");
+      const user = users[userId];
+      const history = user.withdrawHistory || [];
+      const tx = history.find(t => t.txId === txId); 
+      if (tx) { 
+        tx.status = "Approved"; 
+        window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history)
+          .then(() => showToast("विड्रॉल सफल!"))
+          .catch(e => alert("Error: " + e.message));
+      } else {
+        alert("ट्रांज़ैक्शन नहीं मिला!");
+      }
+    }
+    
+    function rejectWithdraw(userId, txId) { 
+      if (!confirm("क्या आप वाकई इस विड्रॉल रिक्वेस्ट को रिजेक्ट (अस्वीकृत) करना चाहते हैं? ऐसा करने से पैसे यूजर के बैलेंस में वापस आ जाएंगे।")) return;
+      
+      if (!window.db || !users[userId]) return alert("डेटा लोड नहीं हुआ, रिफ्रेश करें!");
+      const user = users[userId];
+      const history = user.withdrawHistory || [];
+      const tx = history.find(t => t.txId === txId); 
+      if (tx) { 
+        tx.status = "Rejected"; 
+        const newBalance = (user.balance || 0) + tx.amount;
+        const newWd = (user.withdrawableBalance || 0) + tx.amount;
+        const updates = {
+          withdrawHistory: history, 
+          balance: newBalance, 
+          withdrawableBalance: newWd 
+        };
+        window.db.ref('tp_users/' + userId).update(updates)
+          .then(() => showToast("विड्रॉल रिजेक्ट! पैसे वापस हुए।"))
+          .catch(e => alert("Error: " + e.message));
+      } else {
+        alert("ट्रांज़ैक्शन नहीं मिला!");
+      }
+    }
+
+    // ==================== DATABASE CLEANUP FUNCTIONS ====================
+    function deleteGhostUsers() {
+      if (!window.db) return alert("डेटाबेस कनेक्शन नहीं है!");
+      if (!confirm("क्या आप वाकई सभी 'Unknown' या अधूरे (फालतू) यूजर्स को हमेशा के लिए हटाना चाहते हैं?")) return;
+      
+      let updates = {};
+      let count = 0;
+      
+      Object.values(users).forEach(u => {
+        if (!u.id || !u.name || u.name === 'Unknown' || !u.mobile || u.mobile.length < 10) {
+          updates['tp_users/' + u.id] = null;
+          count++;
+        }
+      });
+      
+      if (count > 0) {
+        window.db.ref().update(updates).then(() => {
+          showToast(`${count} फालतू यूजर्स हटा दिए गए!`);
+        }).catch(e => alert("Error: " + e.message));
+      } else {
+        showToast("कोई फालतू यूजर नहीं मिला!");
+      }
+    }
+
+    function clearAllHistory(type) {
+      if (!window.db) return alert("डेटाबेस कनेक्शन नहीं है!");
+      let msg = type === 'gameHistory' ? 'गेम हिस्ट्री' : (type === 'depositHistory' ? 'डिपॉजिट हिस्ट्री' : 'विड्रॉल हिस्ट्री');
+      if (!confirm(`क्या आप वाकई सभी यूजर्स की ${msg} को हटाना चाहते हैं?`)) return;
+      
+      let updates = {};
+      let count = 0;
+      
+      Object.values(users).forEach(u => {
+        if (u.id && Array.isArray(u[type]) && u[type].length > 0) {
+          updates[`tp_users/${u.id}/${type}`] = [];
+          count++;
+        }
+      });
+      
+      if (count > 0) {
+        window.db.ref().update(updates).then(() => {
+          showToast(`${count} यूजर्स की ${msg} साफ हो गई!`);
+        }).catch(e => alert("Error: " + e.message));
+      } else {
+        showToast("साफ करने के लिए कोई हिस्ट्री नहीं मिली!");
+      }
+    }
+
+    function emptyTrash() {
+      if (!window.db) return alert("डेटाबेस कनेक्शन नहीं है!");
+      if (!confirm("क्या आप डिब्बे (Trash) को पूरी तरह खाली करना चाहते हैं?")) return;
+      window.db.ref('tp_trash').remove().then(() => {
+        showToast("डिब्बा पूरी तरह खाली हो गया!");
+      }).catch(e => alert("Error: " + e.message));
+    }
+
+    window.addEventListener('error', function(e) { console.error("Global Error:", e.message); });
+    
+    window.onload = function() {
+      if (!checkSession()) {
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('adminPanel').style.display = 'none';
+      }
+    };
+  </script>
+</body>
+</html>    let config = {};
     let liveTables = {};
     let activeTab = 'home';
     let adminSearchQuery = '';
