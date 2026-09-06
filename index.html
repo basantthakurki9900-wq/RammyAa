@@ -52,7 +52,7 @@
     .content::-webkit-scrollbar { display: none; }
     .card { background: #1e293b; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid #334155; }
     .card-title { font-size: 12px; font-weight: bold; margin-bottom: 6px; }
-    .btn-sm { padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; border: none; cursor: pointer; color: white; transition: all 0.15s; }
+    .btn-sm { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; border: none; cursor: pointer; color: white; transition: all 0.15s; }
     .btn-sm:active { transform: scale(0.93); }
     .btn-green { background: #22c55e; }
     .btn-red { background: #ef4444; }
@@ -61,6 +61,7 @@
     .btn-purple { background: #8b5cf6; }
     .btn-orange { background: #f97316; }
     .btn-gray { background: #64748b; }
+    .btn-pink { background: #ec4899; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .flex-center { display: flex; align-items: center; gap: 4px; }
     .gap-1 { gap: 3px; }
@@ -100,6 +101,7 @@
     .badge-rejected { background: #ef4444; color: white; }
     .badge-blocked { background: #ef4444; color: white; }
     .badge-active { background: #22c55e; color: white; }
+    .badge-deleted { background: #64748b; color: white; }
     .btn-action { padding: 3px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 10px; font-weight: bold; color: white; transition: all 0.15s; }
     .btn-action:active { transform: scale(0.93); }
     .btn-xs { padding: 2px 6px; font-size: 9px; border-radius: 3px; }
@@ -129,6 +131,13 @@
     
     .withdraw-detail { font-size: 10px; color: #94a3b8; line-height: 1.6; }
     .withdraw-detail span { color: #f8fafc; font-weight: 500; }
+    
+    /* Deleted History Toggle */
+    .deleted-toggle { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 10px; color: #94a3b8; transition: all 0.2s; }
+    .deleted-toggle:hover { border-color: #fbbf24; color: #fbbf24; }
+    .deleted-toggle.active { border-color: #fbbf24; color: #fbbf24; background: #334155; }
+    .deleted-history { display: none; }
+    .deleted-history.show { display: block; }
   </style>
 </head>
 <body>
@@ -215,6 +224,7 @@ let isRendering = false;
 let renderTimer = null;
 let dataLoaded = false;
 let listenersActive = false;
+let showDeletedHistory = {};
 
 let userListener = null;
 let trashListener = null;
@@ -487,6 +497,61 @@ function escapeHtml(text) {
 }
 
 // ============================================================
+// ====================== DELETE GHOST IDs =====================
+// ============================================================
+function deleteGhostIds() {
+  if (!window.db) return showToast('डेटाबेस कनेक्ट नहीं है', 'error');
+  
+  let ghostIds = [];
+  let updates = {};
+  
+  Object.keys(users).forEach(id => {
+    const u = users[id];
+    // Check if user is valid or ghost
+    if (!u || !u.name || !u.mobile || u.mobile.length < 10 || !u.balance) {
+      ghostIds.push(id);
+      updates['tp_users/' + id] = null;
+    }
+  });
+  
+  if (ghostIds.length === 0) {
+    showToast('✅ कोई फालतू आईडी नहीं मिली!', 'success');
+    return;
+  }
+  
+  if (confirm(ghostIds.length + ' फालतू आईडी मिलीं। क्या आप सभी हटाना चाहते हैं?\n\n' + ghostIds.join(', '))) {
+    window.db.ref().update(updates)
+      .then(() => {
+        const localUsers = getUsers();
+        ghostIds.forEach(id => {
+          delete localUsers[id];
+        });
+        localStorage.setItem('tp_users', JSON.stringify(localUsers));
+        users = localUsers;
+        showToast(ghostIds.length + ' फालतू आईडी हटा दी गईं! ✅', 'success');
+        scheduleRender();
+      })
+      .catch(e => showToast('Error: ' + e.message, 'error'));
+  }
+}
+
+// ============================================================
+// ====================== TOGGLE DELETED HISTORY ===============
+// ============================================================
+function toggleDeletedHistory(userId) {
+  showDeletedHistory[userId] = !showDeletedHistory[userId];
+  const el = document.getElementById('deletedHist_' + userId);
+  const btn = document.getElementById('deletedBtn_' + userId);
+  if (el) {
+    el.classList.toggle('show');
+  }
+  if (btn) {
+    btn.classList.toggle('active');
+    btn.textContent = showDeletedHistory[userId] ? '🔽 हटाई गई हिस्ट्री छुपाएं' : '🔼 हटाई गई हिस्ट्री दिखाएं';
+  }
+}
+
+// ============================================================
 // ====================== MAIN RENDER ==========================
 // ============================================================
 function renderContent() {
@@ -596,6 +661,15 @@ function renderHome() {
       <div class="card text-center" style="border-color:#ef4444;"><div class="text-xs text-gray">पेंडिंग विड्रॉल</div><div class="text-2xl font-bold text-red">${pending}</div></div>
     </div>
     <div class="card text-center"><div class="text-xs text-gray">सभी यूजर्स का कुल बैलेंस</div><div class="text-2xl font-bold text-green">₹${totalBalance.toLocaleString('en-IN')}</div></div>
+
+    <!-- Ghost ID Cleanup -->
+    <div class="card" style="border-color:#f97316;background:#1a0a0a;">
+      <div class="card-title text-orange-400">🧹 फालतू आईडी हटाएं</div>
+      <p class="text-xs text-gray-400 mb-2">उन आईडी को हटाएं जिनका कोई डेटा नहीं है (नाम, मोबाइल, बैलेंस)</p>
+      <button onclick="deleteGhostIds()" class="btn-sm btn-orange" style="width:100%;padding:6px;">
+        🗑️ सभी फालतू आईडी हटाएं
+      </button>
+    </div>
 
     <div class="card" style="border-color:#ef4444;background:#1a0a0a;">
       <div class="card-title text-red">🧹 डेटाबेस सफाई</div>
@@ -733,7 +807,7 @@ function renderUsers() {
         <div class="history-item ${isDeleted ? 'deleted-item' : ''}" id="dep_item_${u.id}_${originalIdx}">
           <span class="text-gray">${escapeHtml(d.time || '')}</span>
           <div class="flex-center">
-            <span class="text-green">+₹${d.amount || 0}</span>
+            <span class="${isDeleted ? 'text-gray' : 'text-green'}">${isDeleted ? '🗑️ ' : '+₹'}${d.amount || 0}</span>
             ${!isDeleted ? `<button onclick="deleteHistoryItem('${u.id}', 'depositHistory', ${originalIdx})" class="delete-btn" title="हटाएं">✕</button>` : ''}
             ${isDeleted ? `<button onclick="restoreHistoryItem('${u.id}', 'depositHistory', ${originalIdx})" class="restore-btn" title="वापस लाएं">↩️</button>` : ''}
           </div>
@@ -749,7 +823,7 @@ function renderUsers() {
         <div class="history-item ${isDeleted ? 'deleted-item' : ''}" id="wd_item_${u.id}_${originalIdx}">
           <span class="text-gray">${escapeHtml(w.time || '')}</span>
           <div class="flex-center">
-            <span class="text-red">-₹${w.amount || 0} <span class="badge badge-${w.status?.toLowerCase() || 'pending'}">${escapeHtml(w.status || 'Pending')}</span></span>
+            <span class="${isDeleted ? 'text-gray' : 'text-red'}">${isDeleted ? '🗑️ ' : '-₹'}${w.amount || 0} ${!isDeleted ? `<span class="badge badge-${w.status?.toLowerCase() || 'pending'}">${escapeHtml(w.status || 'Pending')}</span>` : '<span class="badge badge-deleted">हटाई गई</span>'}</span>
             ${!isDeleted ? `<button onclick="deleteHistoryItem('${u.id}', 'withdrawHistory', ${originalIdx})" class="delete-btn" title="हटाएं">✕</button>` : ''}
             ${isDeleted ? `<button onclick="restoreHistoryItem('${u.id}', 'withdrawHistory', ${originalIdx})" class="restore-btn" title="वापस लाएं">↩️</button>` : ''}
           </div>
@@ -765,7 +839,7 @@ function renderUsers() {
         <div class="history-item ${isDeleted ? 'deleted-item' : ''}" id="game_item_${u.id}_${originalIdx}">
           <span class="text-gray">${escapeHtml(g.time || '')}</span>
           <div class="flex-center">
-            <span class="${g.result === 'Loss' ? 'text-red' : 'text-green'}">${escapeHtml(g.result)} ₹${g.amount}</span>
+            <span class="${isDeleted ? 'text-gray' : (g.result === 'Loss' ? 'text-red' : 'text-green')}">${isDeleted ? '🗑️ ' : escapeHtml(g.result)} ${!isDeleted ? '₹' + g.amount : ''}</span>
             ${!isDeleted ? `<button onclick="deleteHistoryItem('${u.id}', 'gameHistory', ${originalIdx})" class="delete-btn" title="हटाएं">✕</button>` : ''}
             ${isDeleted ? `<button onclick="restoreHistoryItem('${u.id}', 'gameHistory', ${originalIdx})" class="restore-btn" title="वापस लाएं">↩️</button>` : ''}
           </div>
@@ -843,19 +917,81 @@ function renderUsers() {
           </div>
         </div>
 
+        <!-- ===== DELETED HISTORY TOGGLE ===== -->
+        <div style="margin-top:4px;">
+          <button id="deletedBtn_${u.id}" class="deleted-toggle" onclick="toggleDeletedHistory('${u.id}')">
+            🔼 हटाई गई हिस्ट्री दिखाएं
+          </button>
+        </div>
+
+        <!-- ===== DELETED HISTORY SECTION ===== -->
+        <div id="deletedHist_${u.id}" class="deleted-history" style="margin-top:4px;">
+
+          <!-- Deleted Deposit History -->
+          <div class="user-collapse" style="border-top:1px solid #334155;padding-top:4px;margin-top:4px;">
+            <div class="card-title text-gray-400">🗑️ हटाई गई डिपॉजिट हिस्ट्री</div>
+            ${(u.depositHistory || []).slice().reverse().filter(d => d._deleted === true).map((d, idx) => {
+              const originalIdx = (u.depositHistory || []).length - 1 - idx;
+              return `
+                <div class="history-item deleted-item" id="dep_item_${u.id}_${originalIdx}">
+                  <span class="text-gray">${escapeHtml(d.time || '')}</span>
+                  <div class="flex-center">
+                    <span class="text-gray">🗑️ ₹${d.amount || 0}</span>
+                    <button onclick="restoreHistoryItem('${u.id}', 'depositHistory', ${originalIdx})" class="restore-btn" title="वापस लाएं">↩️</button>
+                  </div>
+                </div>
+              `;
+            }).join('') || '<span class="text-gray text-xs">कोई हटाई गई डिपॉजिट नहीं</span>'}
+          </div>
+
+          <!-- Deleted Withdraw History -->
+          <div class="user-collapse" style="border-top:1px solid #334155;padding-top:4px;margin-top:4px;">
+            <div class="card-title text-gray-400">🗑️ हटाई गई विड्रॉल हिस्ट्री</div>
+            ${(u.withdrawHistory || []).slice().reverse().filter(w => w._deleted === true).map((w, idx) => {
+              const originalIdx = (u.withdrawHistory || []).length - 1 - idx;
+              return `
+                <div class="history-item deleted-item" id="wd_item_${u.id}_${originalIdx}">
+                  <span class="text-gray">${escapeHtml(w.time || '')}</span>
+                  <div class="flex-center">
+                    <span class="text-gray">🗑️ ₹${w.amount || 0}</span>
+                    <button onclick="restoreHistoryItem('${u.id}', 'withdrawHistory', ${originalIdx})" class="restore-btn" title="वापस लाएं">↩️</button>
+                  </div>
+                </div>
+              `;
+            }).join('') || '<span class="text-gray text-xs">कोई हटाई गई विड्रॉल नहीं</span>'}
+          </div>
+
+          <!-- Deleted Game History -->
+          <div class="user-collapse" style="border-top:1px solid #334155;padding-top:4px;margin-top:4px;">
+            <div class="card-title text-gray-400">🗑️ हटाई गई गेम हिस्ट्री</div>
+            ${(u.gameHistory || []).slice().reverse().filter(g => g._deleted === true).map((g, idx) => {
+              const originalIdx = (u.gameHistory || []).length - 1 - idx;
+              return `
+                <div class="history-item deleted-item" id="game_item_${u.id}_${originalIdx}">
+                  <span class="text-gray">${escapeHtml(g.time || '')}</span>
+                  <div class="flex-center">
+                    <span class="text-gray">🗑️ ${escapeHtml(g.result)}</span>
+                    <button onclick="restoreHistoryItem('${u.id}', 'gameHistory', ${originalIdx})" class="restore-btn" title="वापस लाएं">↩️</button>
+                  </div>
+                </div>
+              `;
+            }).join('') || '<span class="text-gray text-xs">कोई हटाई गई गेम हिस्ट्री नहीं</span>'}
+          </div>
+        </div>
+
         <!-- ===== COLLAPSIBLE SECTIONS ===== -->
         <div id="depositHist_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-green">📥 डिपॉजिट हिस्ट्री <span class="text-xs text-gray">(हटाई गई हिस्ट्री दोबारा देखने के लिए ↩️ क्लिक करें)</span></div>
+          <div class="card-title text-green">📥 डिपॉजिट हिस्ट्री</div>
           ${depoHtml}
         </div>
 
         <div id="withdrawHist_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-red">📤 विड्रॉल हिस्ट्री <span class="text-xs text-gray">(हटाई गई हिस्ट्री दोबारा देखने के लिए ↩️ क्लिक करें)</span></div>
+          <div class="card-title text-red">📤 विड्रॉल हिस्ट्री</div>
           ${wdrlHtml}
         </div>
 
         <div id="gameHist_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-purple-400">🎮 गेम हिस्ट्री <span class="text-xs text-gray">(हटाई गई हिस्ट्री दोबारा देखने के लिए ↩️ क्लिक करें)</span></div>
+          <div class="card-title text-purple-400">🎮 गेम हिस्ट्री</div>
           ${gameHtml}
         </div>
 
@@ -1022,8 +1158,7 @@ function deleteHistoryItem(userId, type, index) {
   if (window.db) {
     window.db.ref('tp_users/' + userId).update(updates)
       .then(() => {
-        showToast('✅ हिस्ट्री हटा दी गई! (दोबारा देखने के लिए ↩️ क्लिक करें)', 'success');
-        // Update local users
+        showToast('✅ हिस्ट्री हटा दी गई! (दोबारा देखने के लिए "हटाई गई हिस्ट्री दिखाएं" बटन पर क्लिक करें)', 'success');
         users[userId][type] = history;
         if (!isSearching) scheduleRender();
       })
