@@ -143,7 +143,6 @@
     .withdraw-detail { font-size: 10px; color: #94a3b8; line-height: 1.6; }
     .withdraw-detail span { color: #f8fafc; font-weight: 500; }
 
-    /* Menu Styles for User Tab Only */
     .menu-container { position: relative; display: inline-block; }
     .menu-dots { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; font-weight: bold; }
     .menu-dots:hover { color: #fbbf24; }
@@ -155,6 +154,16 @@
     .menu-dropdown .menu-item .icon { margin-right: 6px; }
     .menu-overlay { position: fixed; inset: 0; z-index: 40; display: none; }
     .menu-overlay.show { display: block; }
+
+    /* Balance update animation in admin */
+    .admin-balance-update {
+      animation: adminBalanceFlash 0.5s ease-in-out;
+    }
+    @keyframes adminBalanceFlash {
+      0% { background-color: #1e293b; }
+      50% { background-color: #4ade80; color: #0f172a; }
+      100% { background-color: #1e293b; }
+    }
   </style>
 </head>
 <body>
@@ -183,6 +192,7 @@
           <span class="dot offline" id="statusDot"></span>
           <span id="statusText">कनेक्ट नहीं</span>
         </div>
+        <button onclick="forceRefreshAdmin()" class="btn-sm btn-cyan" style="padding:3px 8px;font-size:9px;">🔄 फोर्स</button>
         <button onclick="refreshData()" class="btn-sm btn-gray" style="padding:3px 8px;">🔄</button>
         <button onclick="doLogout()" class="btn-sm btn-red" style="padding:3px 8px;">लॉगआउट</button>
       </div>
@@ -267,9 +277,14 @@ function initFirebase() {
   try {
     userListener = window.db.ref('tp_users');
     userListener.on('value', (snap) => {
-      users = snap.val() || {};
+      const newUsers = snap.val() || {};
+      const changed = JSON.stringify(users) !== JSON.stringify(newUsers);
+      users = newUsers;
       dataLoaded = true;
-      if (!isSearching) scheduleRender();
+      if (changed && !isSearching) {
+        if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+        renderContent(true);
+      }
     });
 
     trashListener = window.db.ref('tp_trash');
@@ -323,18 +338,81 @@ function detachListeners() {
 // ============================================================
 // ====================== RENDER THROTTLING ===================
 // ============================================================
-function scheduleRender() {
-  if (isSearching) return;
+function scheduleRender(immediate = false) {
+  if (isSearching && !immediate) return;
   if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-  renderTimer = setTimeout(() => {
-    renderTimer = null;
-    safeRender();
-  }, 400);
+  if (immediate) {
+    renderContent(true);
+  } else {
+    renderTimer = setTimeout(() => {
+      renderTimer = null;
+      renderContent();
+    }, 200);
+  }
 }
 
-function safeRender() {
-  if (isRendering || isSearching) return;
-  renderContent();
+function renderContent(force = false) {
+  if (!force && (isRendering || isSearching)) return;
+  isRendering = true;
+  const area = document.getElementById('contentArea');
+  
+  try {
+    if (!dataLoaded && !force) {
+      area.innerHTML = '<div class="loading"><div class="spinner"></div>डेटा लोड हो रहा है...</div>';
+      isRendering = false;
+      return;
+    }
+
+    if (force) dataLoaded = true;
+
+    switch(activeTab) {
+      case 'home': area.innerHTML = renderHome(); break;
+      case 'users': area.innerHTML = renderUsers(); break;
+      case 'deposits': area.innerHTML = renderDeposits(); break;
+      case 'withdrawals': area.innerHTML = renderWithdrawals(); break;
+      case 'referrals': area.innerHTML = renderReferrals(); break;
+      case 'reports': area.innerHTML = renderReports(); break;
+      case 'logs': area.innerHTML = renderLogs(); break;
+      case 'trash': area.innerHTML = renderTrash(); break;
+      default: area.innerHTML = '<div class="card text-gray">पेज नहीं मिला</div>';
+    }
+  } catch(e) {
+    area.innerHTML = '<div class="card text-red-400">Error: ' + escapeHtml(e.message) + '</div>';
+    console.error('Render Error:', e);
+  }
+  isRendering = false;
+}
+
+// ============================================================
+// ====================== FORCE REFRESH =======================
+// ============================================================
+function forceRefreshAdmin() {
+  if (!window.db) {
+    showToast('Database not connected', 'error');
+    return;
+  }
+  
+  showToast('🔄 डेटा रीफ्रेश हो रहा है...', 'info');
+  
+  Promise.all([
+    window.db.ref('tp_users').once('value'),
+    window.db.ref('tp_trash').once('value'),
+    window.db.ref('tp_config').once('value'),
+    window.db.ref('tp_live_tables').once('value'),
+    window.db.ref('tp_admin_logs').once('value')
+  ]).then(([usersSnap, trashSnap, configSnap, tablesSnap, logsSnap]) => {
+    users = usersSnap.val() || {};
+    trashUsers = trashSnap.val() || {};
+    config = { ...defaultConfig, ...(configSnap.val() || {}) };
+    liveTables = tablesSnap.val() || {};
+    adminLogs = logsSnap.val() || [];
+    dataLoaded = true;
+    
+    renderContent(true);
+    showToast('✅ डेटा रीफ्रेश हो गया!', 'success');
+  }).catch(e => {
+    showToast('Error: ' + e.message, 'error');
+  });
 }
 
 // ============================================================
@@ -432,16 +510,7 @@ function doSearch() {
   const el = document.getElementById('searchInput');
   if (el) {
     searchQuery = el.value.toLowerCase().trim();
-    const area = document.getElementById('contentArea');
-    if (area) {
-      isRendering = true;
-      try {
-        area.innerHTML = renderUsers();
-      } catch(e) {
-        area.innerHTML = '<div class="card text-red-400">Error: ' + e.message + '</div>';
-      }
-      isRendering = false;
-    }
+    renderContent(true);
   }
 }
 
@@ -463,7 +532,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ============================================================
-// ====================== MENU FUNCTIONS (User Tab Only) ======
+// ====================== MENU FUNCTIONS ======================
 // ============================================================
 function toggleMenu(userId, event) {
   event.stopPropagation();
@@ -505,15 +574,24 @@ document.addEventListener('click', function() {
 // ============================================================
 function saveUserToDB(id, data) {
   if (window.db) {
-    window.db.ref('tp_users/' + id).update(data).catch(e => showToast('DB Error: ' + e.message, 'error'));
-    if (!isSearching) scheduleRender();
+    window.db.ref('tp_users/' + id).update(data)
+      .then(() => {
+        if (users[id]) {
+          users[id] = { ...users[id], ...data };
+        }
+        if (!isSearching) {
+          if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+          renderContent(true);
+        }
+        showToast('✅ अपडेट सफल!', 'success');
+      })
+      .catch(e => showToast('DB Error: ' + e.message, 'error'));
   }
 }
 
 function saveConfigToDB() {
   if (window.db) {
     window.db.ref('tp_config').set(config).catch(e => showToast('Config Error: ' + e.message, 'error'));
-    if (!isSearching) scheduleRender();
   }
 }
 
@@ -569,43 +647,76 @@ function deleteGhostIds() {
           addAdminLog('ghost_delete', id, 'Ghost ID deleted');
         });
         showToast(ghostIds.length + ' फालतू आईडी हटा दी गईं! ✅', 'success');
-        scheduleRender();
+        scheduleRender(true);
       })
       .catch(e => showToast('Error: ' + e.message, 'error'));
   }
 }
 
 // ============================================================
-// ====================== MAIN RENDER ==========================
+// ====================== RESTORE USER BY MOBILE ===============
 // ============================================================
-function renderContent() {
-  if (isRendering || isSearching) return;
-  isRendering = true;
-  const area = document.getElementById('contentArea');
+function restoreUserByMobile() {
+  const mobile = document.getElementById('restoreMobileInput').value.trim();
+  const resultEl = document.getElementById('restoreResult');
   
-  try {
-    if (!dataLoaded) {
-      area.innerHTML = '<div class="loading"><div class="spinner"></div>डेटा लोड हो रहा है...</div>';
-      isRendering = false;
+  if (!mobile || mobile.length !== 10) {
+    resultEl.innerHTML = '<span class="text-red-400">❌ कृपया 10 अंकों का मोबाइल नंबर दर्ज करें</span>';
+    return;
+  }
+
+  let foundInTrash = false;
+  let trashUserId = null;
+  
+  Object.entries(trashUsers).forEach(([id, u]) => {
+    if (u.mobile === mobile) {
+      foundInTrash = true;
+      trashUserId = id;
+    }
+  });
+
+  if (foundInTrash && trashUserId) {
+    if (!window.db) {
+      resultEl.innerHTML = '<span class="text-red-400">❌ डेटाबेस कनेक्ट नहीं है</span>';
       return;
     }
-
-    switch(activeTab) {
-      case 'home': area.innerHTML = renderHome(); break;
-      case 'users': area.innerHTML = renderUsers(); break;
-      case 'deposits': area.innerHTML = renderDeposits(); break;
-      case 'withdrawals': area.innerHTML = renderWithdrawals(); break;
-      case 'referrals': area.innerHTML = renderReferrals(); break;
-      case 'reports': area.innerHTML = renderReports(); break;
-      case 'logs': area.innerHTML = renderLogs(); break;
-      case 'trash': area.innerHTML = renderTrash(); break;
-      default: area.innerHTML = '<div class="card text-gray">पेज नहीं मिला</div>';
-    }
-  } catch(e) {
-    area.innerHTML = '<div class="card text-red-400">Error: ' + escapeHtml(e.message) + '</div>';
-    console.error('Render Error:', e);
+    
+    const trashRef = window.db.ref('tp_trash/' + trashUserId);
+    const userRef = window.db.ref('tp_users/' + trashUserId);
+    
+    trashRef.once('value').then(snap => {
+      if (snap.val()) {
+        userRef.set(snap.val()).then(() => {
+          trashRef.remove().then(() => {
+            addAdminLog('trash_restore', trashUserId, 'Restored by mobile: ' + mobile);
+            resultEl.innerHTML = `<span class="text-green-400">✅ यूजर (${escapeHtml(snap.val().name || 'N/A')}) वापस लाया गया!</span>`;
+            showToast('✅ यूजर रिस्टोर हो गया!', 'success');
+            document.getElementById('restoreMobileInput').value = '';
+            scheduleRender(true);
+          });
+        });
+      } else {
+        resultEl.innerHTML = '<span class="text-red-400">❌ डिब्बे में यूजर नहीं मिला</span>';
+      }
+    }).catch(e => {
+      resultEl.innerHTML = '<span class="text-red-400">❌ Error: ' + e.message + '</span>';
+    });
+    return;
   }
-  isRendering = false;
+
+  let foundInUsers = false;
+  Object.values(users).forEach(u => {
+    if (u.mobile === mobile) {
+      foundInUsers = true;
+    }
+  });
+
+  if (foundInUsers) {
+    resultEl.innerHTML = '<span class="text-yellow-400">⚠️ यह यूजर पहले से मौजूद है!</span>';
+    return;
+  }
+
+  resultEl.innerHTML = '<span class="text-red-400">❌ इस मोबाइल नंबर का कोई हटाया गया यूजर नहीं मिला</span>';
 }
 
 // ============================================================
@@ -819,73 +930,7 @@ function renderHome() {
 }
 
 // ============================================================
-// ====================== RESTORE USER BY MOBILE ===============
-// ============================================================
-function restoreUserByMobile() {
-  const mobile = document.getElementById('restoreMobileInput').value.trim();
-  const resultEl = document.getElementById('restoreResult');
-  
-  if (!mobile || mobile.length !== 10) {
-    resultEl.innerHTML = '<span class="text-red-400">❌ कृपया 10 अंकों का मोबाइल नंबर दर्ज करें</span>';
-    return;
-  }
-
-  let foundInTrash = false;
-  let trashUserId = null;
-  
-  Object.entries(trashUsers).forEach(([id, u]) => {
-    if (u.mobile === mobile) {
-      foundInTrash = true;
-      trashUserId = id;
-    }
-  });
-
-  if (foundInTrash && trashUserId) {
-    if (!window.db) {
-      resultEl.innerHTML = '<span class="text-red-400">❌ डेटाबेस कनेक्ट नहीं है</span>';
-      return;
-    }
-    
-    const trashRef = window.db.ref('tp_trash/' + trashUserId);
-    const userRef = window.db.ref('tp_users/' + trashUserId);
-    
-    trashRef.once('value').then(snap => {
-      if (snap.val()) {
-        userRef.set(snap.val()).then(() => {
-          trashRef.remove().then(() => {
-            addAdminLog('trash_restore', trashUserId, 'Restored by mobile: ' + mobile);
-            resultEl.innerHTML = `<span class="text-green-400">✅ यूजर (${escapeHtml(snap.val().name || 'N/A')}) वापस लाया गया!</span>`;
-            showToast('✅ यूजर रिस्टोर हो गया!', 'success');
-            document.getElementById('restoreMobileInput').value = '';
-            scheduleRender();
-          });
-        });
-      } else {
-        resultEl.innerHTML = '<span class="text-red-400">❌ डिब्बे में यूजर नहीं मिला</span>';
-      }
-    }).catch(e => {
-      resultEl.innerHTML = '<span class="text-red-400">❌ Error: ' + e.message + '</span>';
-    });
-    return;
-  }
-
-  let foundInUsers = false;
-  Object.values(users).forEach(u => {
-    if (u.mobile === mobile) {
-      foundInUsers = true;
-    }
-  });
-
-  if (foundInUsers) {
-    resultEl.innerHTML = '<span class="text-yellow-400">⚠️ यह यूजर पहले से मौजूद है!</span>';
-    return;
-  }
-
-  resultEl.innerHTML = '<span class="text-red-400">❌ इस मोबाइल नंबर का कोई हटाया गया यूजर नहीं मिला</span>';
-}
-
-// ============================================================
-// ====================== RENDER: USERS (With 3 Lines) ========
+// ====================== RENDER: USERS =======================
 // ============================================================
 function renderUsers() {
   let userList = Object.values(users);
@@ -917,11 +962,12 @@ function renderUsers() {
   userList.forEach(u => {
     const balance = u.balance || 0;
     const wdBalance = u.withdrawableBalance || 0;
+    const bonusBalance = u.bonusBalance || 0;
     const hasDepositedAfter250 = u.hasDepositedAfter250 || false;
     const deviceId = u.deviceId || 'N/A';
     
     html += `
-      <div class="card">
+      <div class="card" id="user_card_${u.id}">
         <div class="flex-between">
           <div class="flex-center">
             <span class="text-sm font-bold text-yellow-400">${escapeHtml(u.name || 'Unknown')}</span>
@@ -929,10 +975,9 @@ function renderUsers() {
           </div>
           <div class="flex-center">
             <div class="text-right" style="margin-right:8px;">
-              <div class="text-lg font-bold text-green">₹${balance.toLocaleString('en-IN')}</div>
+              <div class="text-lg font-bold text-green" id="balance_display_${u.id}">₹${balance.toLocaleString('en-IN')}</div>
               <div class="text-[9px] text-yellow">विड्रॉल: ₹${Math.min(wdBalance, balance).toLocaleString('en-IN')}</div>
             </div>
-            <!-- ===== 3 LINES MENU (≡) - ONLY IN USERS TAB ===== -->
             <div class="menu-container">
               <button class="menu-dots" onclick="toggleMenu('${u.id}', event)">≡</button>
               <div class="menu-dropdown" id="menu_${u.id}">
@@ -978,14 +1023,13 @@ function renderUsers() {
         </div>
         <div class="text-[9px] text-gray">📱 ${escapeHtml(deviceId)}</div>
         
-        <!-- Referral Info -->
         <div class="text-xs" style="padding:3px;background:#0f172a;border-radius:4px;margin-top:3px;">
           <span class="text-gray">रेफरल कोड: </span><span class="text-yellow font-mono">${escapeHtml(u.referralCode || 'N/A')}</span>
           <span class="text-gray ml-2">कमाई: </span><span class="text-green">₹${u.referralEarnings || 0}</span>
           <span class="text-gray ml-2">रेफरल: </span><span class="text-white">${u.referralCount || 0}</span>
         </div>
         
-        <!-- Hidden sections for viewing histories -->
+        <!-- Hidden sections -->
         <div id="depositHist_${u.id}" class="user-collapse hidden">
           <div class="card-title text-green">📥 डिपॉजिट हिस्ट्री</div>
           ${(u.depositHistory || []).slice().reverse().map((d, i) => `
@@ -1080,6 +1124,7 @@ function renderUserReport(u) {
     <div class="report-grid">
       <div class="report-item"><span>कुल बैलेंस</span><span class="text-green">₹${(u.balance || 0).toLocaleString()}</span></div>
       <div class="report-item"><span>विड्रॉल बैलेंस</span><span class="text-yellow">₹${Math.min((u.withdrawableBalance||0), (u.balance||0)).toLocaleString()}</span></div>
+      <div class="report-item"><span>बोनस बैलेंस</span><span class="text-purple-400">₹${(u.bonusBalance||0).toLocaleString()}</span></div>
       <div class="report-item"><span>कुल डिपॉजिट</span><span class="text-green">₹${totalDeposit.toLocaleString()}</span></div>
       <div class="report-item"><span>कुल विड्रॉल</span><span class="text-red">₹${totalWithdraw.toLocaleString()}</span></div>
       <div class="report-item"><span>कुल गेम्स</span><span class="text-white">${totalGames}</span></div>
@@ -1180,14 +1225,14 @@ function refreshUserData(userId) {
       if (snap.val()) {
         users[userId] = snap.val();
         showToast('🔄 यूजर डेटा रीफ्रेश हो गया!', 'success');
-        if (!isSearching) scheduleRender();
+        renderContent(true);
       }
     }).catch(e => showToast('Error: ' + e.message, 'error'));
   }
 }
 
 // ============================================================
-// ====================== RENDER: DEPOSITS (No 3 Lines) =======
+// ====================== RENDER: DEPOSITS =====================
 // ============================================================
 function renderDeposits() {
   let allDeposits = [];
@@ -1210,7 +1255,7 @@ function renderDeposits() {
           <div>
             <div class="text-sm font-bold text-yellow-400">${escapeHtml(d.user || 'N/A')}</div>
             <div class="text-xs text-gray">${escapeHtml(d.mobile || 'N/A')}</div>
-            <div class="text-xs text-gray">${escapeHtml(d.time || '')} ${d.orderId ? '| ID: ' + escapeHtml(d.orderId) : ''}</div>
+            <div class="text-xs text-gray">${escapeHtml(d.time || '')} ${d.utr ? '| ID: ' + escapeHtml(d.utr) : ''}</div>
             ${isDeleted ? '<span class="badge badge-deleted">🗑️ हटाई गई</span>' : '<span class="badge badge-approved">✅ सक्रिय</span>'}
           </div>
           <div class="text-right">
@@ -1230,7 +1275,7 @@ function renderDeposits() {
 }
 
 // ============================================================
-// ====================== RENDER: WITHDRAWALS (No 3 Lines) ====
+// ====================== RENDER: WITHDRAWALS ==================
 // ============================================================
 function renderWithdrawals() {
   let allWithdrawals = [];
@@ -1466,6 +1511,9 @@ function renderLogs() {
     } else if (log.action === 'unblock') {
       actionClass = 'unblock';
       actionIcon = '🔓';
+    } else if (log.action === 'balance_add' || log.action === 'balance_deduct') {
+      actionClass = 'unblock';
+      actionIcon = '💰';
     } else {
       actionIcon = '📝';
     }
@@ -1489,7 +1537,7 @@ function renderLogs() {
 }
 
 // ============================================================
-// ====================== RENDER: TRASH (No 3 Lines) ==========
+// ====================== RENDER: TRASH ========================
 // ============================================================
 function renderTrash() {
   let trashHtml = '';
@@ -1550,7 +1598,7 @@ function deleteDepositItem(userId, index) {
         users[userId].depositHistory = history;
         addAdminLog('deposit_delete', userId, 'Deposit ₹' + item.amount + ' deleted');
         showToast('✅ डिपॉजिट हटा दी गई!', 'success');
-        scheduleRender();
+        scheduleRender(true);
       })
       .catch(e => showToast('Error: ' + e.message, 'error'));
   }
@@ -1576,7 +1624,7 @@ function restoreDepositItem(userId, index) {
         users[userId].depositHistory = history;
         addAdminLog('deposit_restore', userId, 'Deposit ₹' + item.amount + ' restored');
         showToast('✅ डिपॉजिट वापस आ गई!', 'success');
-        scheduleRender();
+        scheduleRender(true);
       })
       .catch(e => showToast('Error: ' + e.message, 'error'));
   }
@@ -1605,7 +1653,7 @@ function deleteWithdrawItem(userId, index) {
         users[userId].withdrawHistory = history;
         addAdminLog('withdraw_delete', userId, 'Withdraw ₹' + item.amount + ' deleted');
         showToast('✅ विड्रॉल हटा दी गई!', 'success');
-        scheduleRender();
+        scheduleRender(true);
       })
       .catch(e => showToast('Error: ' + e.message, 'error'));
   }
@@ -1631,7 +1679,7 @@ function restoreWithdrawItem(userId, index) {
         users[userId].withdrawHistory = history;
         addAdminLog('withdraw_restore', userId, 'Withdraw ₹' + item.amount + ' restored');
         showToast('✅ विड्रॉल वापस आ गई!', 'success');
-        scheduleRender();
+        scheduleRender(true);
       })
       .catch(e => showToast('Error: ' + e.message, 'error'));
   }
@@ -1755,25 +1803,47 @@ function adjustBalance(id, type) {
   if (!u) return showToast('यूजर नहीं मिला', 'error');
 
   const updates = {};
+  const newBalance = type === 'add' ? (u.balance || 0) + amt : Math.max(0, (u.balance || 0) - amt);
+  const newWd = type === 'add' ? (u.withdrawableBalance || 0) + amt : Math.max(0, (u.withdrawableBalance || 0) - amt);
+  
+  updates.balance = newBalance;
+  updates.withdrawableBalance = newWd;
+  
   if (type === 'add') {
-    updates.balance = (u.balance || 0) + amt;
-    updates.withdrawableBalance = (u.withdrawableBalance || 0) + amt;
     const hist = Array.isArray(u.depositHistory) ? u.depositHistory : [];
-    hist.push({ amount: amt, time: new Date().toLocaleString(), ts: Date.now(), desc: 'Admin Added' });
+    hist.push({ 
+      amount: amt, 
+      time: new Date().toLocaleString(), 
+      ts: Date.now(), 
+      desc: 'Admin Added', 
+      status: 'Success' 
+    });
     updates.depositHistory = hist.slice(-30);
-    saveUserToDB(id, updates);
-    addAdminLog('balance_add', id, 'Added ₹' + amt);
-    showToast('₹' + amt + ' जोड़े गए!', 'success');
   } else {
-    updates.balance = Math.max(0, (u.balance || 0) - amt);
-    updates.withdrawableBalance = Math.max(0, (u.withdrawableBalance || 0) - amt);
     const hist = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : [];
-    hist.push({ txId: Date.now(), amount: amt, time: new Date().toLocaleString(), ts: Date.now(), status: 'Admin Deducted' });
+    hist.push({ 
+      txId: Date.now(), 
+      amount: amt, 
+      time: new Date().toLocaleString(), 
+      ts: Date.now(), 
+      status: 'Admin Deducted' 
+    });
     updates.withdrawHistory = hist.slice(-30);
-    saveUserToDB(id, updates);
-    addAdminLog('balance_deduct', id, 'Deducted ₹' + amt);
-    showToast('₹' + amt + ' कटे!', 'success');
   }
+  
+  users[id] = { ...users[id], ...updates };
+  
+  if (window.db) {
+    window.db.ref('tp_users/' + id).update(updates)
+      .then(() => {
+        addAdminLog(type === 'add' ? 'balance_add' : 'balance_deduct', id, (type === 'add' ? 'Added' : 'Deducted') + ' ₹' + amt);
+        showToast((type === 'add' ? '₹' + amt + ' जोड़े गए!' : '₹' + amt + ' कटे!'), 'success');
+        // Force re-render
+        renderContent(true);
+      })
+      .catch(e => showToast('Error: ' + e.message, 'error'));
+  }
+  
   document.getElementById('amt_' + id).value = '';
 }
 
@@ -1808,6 +1878,7 @@ function deleteUserToTrash(id) {
         userRef.remove().then(() => {
           addAdminLog('trash_move', id, 'User moved to trash');
           showToast('यूजर डिब्बे में गया!', 'success');
+          scheduleRender(true);
         });
       });
     } else {
@@ -1827,6 +1898,7 @@ function restoreUser(id) {
         trashRef.remove().then(() => {
           addAdminLog('trash_restore', id, 'User restored from trash');
           showToast('यूजर वापस लाया गया!', 'success');
+          scheduleRender(true);
         });
       });
     } else {
@@ -1841,6 +1913,7 @@ function deleteUserPermanently(id) {
   window.db.ref('tp_trash/' + id).remove().then(() => {
     addAdminLog('permanent_delete', id, 'User permanently deleted');
     showToast('यूजर पक्का डिलीट हो गया!', 'success');
+    scheduleRender(true);
   }).catch(e => showToast('Error: ' + e.message, 'error'));
 }
 
@@ -1854,8 +1927,10 @@ function approveWithdraw(userId, txId) {
   tx.status = 'Approved';
   window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history)
     .then(() => {
+      users[userId].withdrawHistory = history;
       addAdminLog('withdraw_approve', userId, '₹' + tx.amount + ' approved');
       showToast('विड्रॉल सफल!', 'success');
+      renderContent(true);
     })
     .catch(e => showToast('Error: ' + e.message, 'error'));
 }
@@ -1875,48 +1950,13 @@ function rejectWithdraw(userId, txId) {
     balance: newBalance,
     withdrawableBalance: newWd
   }).then(() => {
+    users[userId].withdrawHistory = history;
+    users[userId].balance = newBalance;
+    users[userId].withdrawableBalance = newWd;
     addAdminLog('withdraw_reject', userId, '₹' + tx.amount + ' rejected, refunded');
     showToast('विड्रॉल रिजेक्ट! पैसे वापस हुए।', 'success');
+    renderContent(true);
   }).catch(e => showToast('Error: ' + e.message, 'error'));
-}
-
-function deleteGhostUsers() {
-  if (!window.db || !confirm('फालतू यूजर्स हटाएं?')) return;
-  let updates = {}, count = 0;
-  Object.values(users).forEach(u => {
-    if (!u.id || !u.name || u.name === 'Unknown' || !u.mobile || u.mobile.length < 10) {
-      updates['tp_users/' + u.id] = null;
-      count++;
-    }
-  });
-  if (count > 0) {
-    window.db.ref().update(updates).then(() => {
-      addAdminLog('ghost_delete', 'all', count + ' ghost users deleted');
-      showToast(count + ' फालतू यूजर्स हटा दिए गए!', 'success');
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
-  } else {
-    showToast('कोई फालतू यूजर नहीं मिला!', 'info');
-  }
-}
-
-function clearAllHistory(type) {
-  const names = { gameHistory: 'गेम हिस्ट्री', depositHistory: 'डिपॉजिट हिस्ट्री', withdrawHistory: 'विड्रॉल हिस्ट्री' };
-  if (!window.db || !confirm('सभी ' + names[type] + ' हटाएं?')) return;
-  let updates = {}, count = 0;
-  Object.values(users).forEach(u => {
-    if (u.id && Array.isArray(u[type]) && u[type].length > 0) {
-      updates['tp_users/' + u.id + '/' + type] = [];
-      count++;
-    }
-  });
-  if (count > 0) {
-    window.db.ref().update(updates).then(() => {
-      addAdminLog('clear_history', 'all', names[type] + ' cleared for ' + count + ' users');
-      showToast(count + ' यूजर्स की ' + names[type] + ' साफ हो गई!', 'success');
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
-  } else {
-    showToast('साफ करने के लिए कोई हिस्ट्री नहीं!', 'info');
-  }
 }
 
 function emptyTrash() {
@@ -1924,11 +1964,12 @@ function emptyTrash() {
   window.db.ref('tp_trash').remove().then(() => {
     addAdminLog('empty_trash', 'all', 'Trash emptied');
     showToast('डिब्बा पूरी तरह खाली हो गया!', 'success');
+    scheduleRender(true);
   }).catch(e => showToast('Error: ' + e.message, 'error'));
 }
 
 function exportData() {
-  let csv = 'ID,Name,Mobile,Balance,Withdrawable,Bonus,Blocked,Device ID,Referral Code,Referral Earnings,Total Games,Wins,Losses,Total Deposits,Total Withdrawals,Joined Date\n';
+  let csv = 'ID,Name,Mobile,Balance,Withdrawable,Bonus,Blocked,Device ID,Referral Code,Referral Earnings,Total Games,Wins,Losses,Total Deposits,Total Withdrawals,₹250+ Deposited,Joined Date\n';
   
   Object.values(users).forEach(u => {
     const totalDep = (u.depositHistory || []).reduce((s, d) => {
@@ -1940,7 +1981,7 @@ function exportData() {
     const wins = (u.gameHistory || []).filter(g => g.result === 'Win').length;
     const losses = (u.gameHistory || []).filter(g => g.result === 'Loss').length;
     
-    csv += `${u.id},${u.name},${u.mobile},${u.balance||0},${u.withdrawableBalance||0},${u.bonusBalance||0},${u.isBlocked?'Yes':'No'},${u.deviceId||'N/A'},${u.referralCode||'N/A'},${u.referralEarnings||0},${totalGames},${wins},${losses},${totalDep},${totalWd},${u.createdAt?new Date(u.createdAt).toLocaleDateString():'N/A'}\n`;
+    csv += `${u.id},${u.name},${u.mobile},${u.balance||0},${u.withdrawableBalance||0},${u.bonusBalance||0},${u.isBlocked?'Yes':'No'},${u.deviceId||'N/A'},${u.referralCode||'N/A'},${u.referralEarnings||0},${totalGames},${wins},${losses},${totalDep},${totalWd},${u.hasDepositedAfter250?'Yes':'No'},${u.createdAt?new Date(u.createdAt).toLocaleDateString():'N/A'}\n`;
   });
   
   const blob = new Blob([csv], { type: 'text/csv' });
