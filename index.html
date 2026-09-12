@@ -155,7 +155,6 @@
     .menu-overlay { position: fixed; inset: 0; z-index: 40; display: none; }
     .menu-overlay.show { display: block; }
 
-    /* Balance update animation in admin */
     .admin-balance-update {
       animation: adminBalanceFlash 0.5s ease-in-out;
     }
@@ -207,6 +206,7 @@
       <div class="nav-item" onclick="setTab('users')" id="nav_users"><span class="icon">👥</span>यूजर</div>
       <div class="nav-item" onclick="setTab('deposits')" id="nav_deposits"><span class="icon">⬇️</span>डिपॉजिट</div>
       <div class="nav-item" onclick="setTab('withdrawals')" id="nav_withdrawals"><span class="icon">⬆️</span>विड्रॉल</div>
+      <div class="nav-item" onclick="setTab('utr')" id="nav_utr"><span class="icon">🧾</span>UTR</div>
       <div class="nav-item" onclick="setTab('referrals')" id="nav_referrals"><span class="icon">🎁</span>रेफरल</div>
       <div class="nav-item" onclick="setTab('reports')" id="nav_reports"><span class="icon">📊</span>रिपोर्ट</div>
       <div class="nav-item" onclick="setTab('logs')" id="nav_logs"><span class="icon">📋</span>लॉग</div>
@@ -370,6 +370,7 @@ function renderContent(force = false) {
       case 'users': area.innerHTML = renderUsers(); break;
       case 'deposits': area.innerHTML = renderDeposits(); break;
       case 'withdrawals': area.innerHTML = renderWithdrawals(); break;
+      case 'utr': area.innerHTML = renderUtrRequests(); break;
       case 'referrals': area.innerHTML = renderReferrals(); break;
       case 'reports': area.innerHTML = renderReports(); break;
       case 'logs': area.innerHTML = renderLogs(); break;
@@ -1029,7 +1030,6 @@ function renderUsers() {
           <span class="text-gray ml-2">रेफरल: </span><span class="text-white">${u.referralCount || 0}</span>
         </div>
         
-        <!-- Hidden sections -->
         <div id="depositHist_${u.id}" class="user-collapse hidden">
           <div class="card-title text-green">📥 डिपॉजिट हिस्ट्री</div>
           ${(u.depositHistory || []).slice().reverse().map((d, i) => `
@@ -1145,9 +1145,7 @@ function viewDepositHistory(userId) {
   const el = document.getElementById('depositHist_' + userId);
   if (el) {
     document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'depositHist_' + userId && e.id !== 'withdrawHist_' + userId && e.id !== 'gameHist_' + userId && e.id !== 'refList_' + userId && e.id !== 'report_' + userId) {
-        e.classList.add('hidden');
-      }
+      if (e.id !== 'depositHist_' + userId) e.classList.add('hidden');
     });
     el.classList.toggle('hidden');
     showToast('📥 डिपॉजिट हिस्ट्री देख रहे हैं', 'info');
@@ -1159,9 +1157,7 @@ function viewWithdrawHistory(userId) {
   const el = document.getElementById('withdrawHist_' + userId);
   if (el) {
     document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'depositHist_' + userId && e.id !== 'withdrawHist_' + userId && e.id !== 'gameHist_' + userId && e.id !== 'refList_' + userId && e.id !== 'report_' + userId) {
-        e.classList.add('hidden');
-      }
+      if (e.id !== 'withdrawHist_' + userId) e.classList.add('hidden');
     });
     el.classList.toggle('hidden');
     showToast('📤 विड्रॉल हिस्ट्री देख रहे हैं', 'info');
@@ -1173,9 +1169,7 @@ function viewGameHistory(userId) {
   const el = document.getElementById('gameHist_' + userId);
   if (el) {
     document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'depositHist_' + userId && e.id !== 'withdrawHist_' + userId && e.id !== 'gameHist_' + userId && e.id !== 'refList_' + userId && e.id !== 'report_' + userId) {
-        e.classList.add('hidden');
-      }
+      if (e.id !== 'gameHist_' + userId) e.classList.add('hidden');
     });
     el.classList.toggle('hidden');
     showToast('🎮 गेम हिस्ट्री देख रहे हैं', 'info');
@@ -1187,9 +1181,7 @@ function viewReferrals(userId) {
   const el = document.getElementById('refList_' + userId);
   if (el) {
     document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'depositHist_' + userId && e.id !== 'withdrawHist_' + userId && e.id !== 'gameHist_' + userId && e.id !== 'refList_' + userId && e.id !== 'report_' + userId) {
-        e.classList.add('hidden');
-      }
+      if (e.id !== 'refList_' + userId) e.classList.add('hidden');
     });
     el.classList.toggle('hidden');
     showToast('🎁 रेफरल्स देख रहे हैं', 'info');
@@ -1201,9 +1193,7 @@ function viewUserReport(userId) {
   const el = document.getElementById('report_' + userId);
   if (el) {
     document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'depositHist_' + userId && e.id !== 'withdrawHist_' + userId && e.id !== 'gameHist_' + userId && e.id !== 'refList_' + userId && e.id !== 'report_' + userId) {
-        e.classList.add('hidden');
-      }
+      if (e.id !== 'report_' + userId) e.classList.add('hidden');
     });
     el.classList.toggle('hidden');
     showToast('📊 यूजर रिपोर्ट देख रहे हैं', 'info');
@@ -1332,6 +1322,103 @@ function renderWithdrawals() {
       </div>
     `;
   }).join('');
+}
+
+// ============================================================
+// ====================== RENDER: UTR REQUESTS =================
+// ============================================================
+function renderUtrRequests() {
+  let allReqs = [];
+  Object.values(users).forEach(u => {
+    (u.utrRequests || []).forEach((req, idx) => {
+      allReqs.push({ ...req, user: u.name, mobile: u.mobile, userId: u.id, index: idx });
+    });
+  });
+  allReqs.sort((a,b) => (b.ts || 0) - (a.ts || 0));
+
+  if (allReqs.length === 0) {
+    return '<div class="card text-gray text-center">कोई UTR अनुरोध नहीं है</div>';
+  }
+
+  return allReqs.map(req => {
+    const isProcessed = req.status !== 'Pending';
+    const statusClass = req.status === 'Approved' ? 'badge-approved' : req.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+    
+    return `
+      <div class="card ${isProcessed ? 'opacity-50' : ''}" style="border-color: #06b6d4;">
+        <div class="flex-between">
+          <div>
+            <div class="text-sm font-bold text-yellow-400">${escapeHtml(req.user || 'N/A')}</div>
+            <div class="text-xs text-gray">${escapeHtml(req.mobile || 'N/A')}</div>
+            <div class="text-xs text-gray">₹${req.amount || 0} | ${escapeHtml(req.time || '')}</div>
+            <div class="text-xs text-cyan-400 mt-1 break-all">UTR: ${escapeHtml(req.utr || 'N/A')}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-lg font-bold text-green">₹${req.amount || 0}</div>
+            <div class="flex-center gap-1" style="margin-top:3px;">
+              ${!isProcessed ? `
+                <button onclick="approveUtr('${req.userId}', ${req.index})" class="btn-sm btn-green" style="font-size:9px;">✅ स्वीकार</button>
+                <button onclick="rejectUtr('${req.userId}', ${req.index})" class="btn-sm btn-red" style="font-size:9px;">❌ नकार</button>
+              ` : `<span class="badge ${statusClass}">${escapeHtml(req.status)}</span>`}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function approveUtr(userId, index) {
+  const u = users[userId];
+  if (!u) return showToast('यूजर नहीं मिला', 'error');
+  const reqs = u.utrRequests || [];
+  if (index >= reqs.length) return showToast('अनुरोध नहीं मिला', 'error');
+  
+  const req = reqs[index];
+  if (!req || req.status !== 'Pending') return showToast('यह पहले ही प्रोसेस हो चुका है', 'warning');
+  
+  reqs[index].status = 'Approved';
+  
+  const depHist = Array.isArray(u.depositHistory) ? u.depositHistory : [];
+  depHist.push({ amount: req.amount, time: new Date().toLocaleString(), ts: Date.now(), desc: 'UTR Approved', status: 'Success', utr: req.utr });
+  
+  // Adding to Bonus Balance instead of Withdrawable so user can't withdraw immediately
+  const updates = {
+    utrRequests: reqs,
+    depositHistory: depHist.slice(-30),
+    balance: (u.balance || 0) + req.amount,
+    bonusBalance: (u.bonusBalance || 0) + req.amount 
+  };
+  
+  if (window.db) {
+    window.db.ref('tp_users/' + userId).update(updates).then(() => {
+      users[userId] = { ...users[userId], ...updates };
+      addAdminLog('utr_approve', userId, 'UTR ₹' + req.amount + ' approved');
+      showToast('UTR स्वीकृत! ₹' + req.amount + ' बैलेंस में जोड़े गए।', 'success');
+      renderContent(true);
+    }).catch(e => showToast('Error: ' + e.message, 'error'));
+  }
+}
+
+function rejectUtr(userId, index) {
+  const u = users[userId];
+  if (!u) return showToast('यूजर नहीं मिला', 'error');
+  const reqs = u.utrRequests || [];
+  if (index >= reqs.length) return showToast('अनुरोध नहीं मिला', 'error');
+  
+  const req = reqs[index];
+  if (!req || req.status !== 'Pending') return showToast('यह पहले ही प्रोसेस हो चुका है', 'warning');
+  
+  reqs[index].status = 'Rejected';
+  
+  if (window.db) {
+    window.db.ref('tp_users/' + userId + '/utrRequests').set(reqs).then(() => {
+      users[userId].utrRequests = reqs;
+      addAdminLog('utr_reject', userId, 'UTR ₹' + req.amount + ' rejected');
+      showToast('UTR अस्वीकृत किया गया।', 'success');
+      renderContent(true);
+    }).catch(e => showToast('Error: ' + e.message, 'error'));
+  }
 }
 
 // ============================================================
@@ -1804,30 +1891,17 @@ function adjustBalance(id, type) {
 
   const updates = {};
   const newBalance = type === 'add' ? (u.balance || 0) + amt : Math.max(0, (u.balance || 0) - amt);
-  const newWd = type === 'add' ? (u.withdrawableBalance || 0) + amt : Math.max(0, (u.withdrawableBalance || 0) - amt);
-  
-  updates.balance = newBalance;
-  updates.withdrawableBalance = newWd;
   
   if (type === 'add') {
+    updates.balance = newBalance;
+    updates.bonusBalance = (u.bonusBalance || 0) + amt; // Add to Bonus Balance, NOT Withdrawable
     const hist = Array.isArray(u.depositHistory) ? u.depositHistory : [];
-    hist.push({ 
-      amount: amt, 
-      time: new Date().toLocaleString(), 
-      ts: Date.now(), 
-      desc: 'Admin Added', 
-      status: 'Success' 
-    });
+    hist.push({ amount: amt, time: new Date().toLocaleString(), ts: Date.now(), desc: 'Admin Added (Bonus)', status: 'Success' });
     updates.depositHistory = hist.slice(-30);
   } else {
+    updates.balance = newBalance;
     const hist = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : [];
-    hist.push({ 
-      txId: Date.now(), 
-      amount: amt, 
-      time: new Date().toLocaleString(), 
-      ts: Date.now(), 
-      status: 'Admin Deducted' 
-    });
+    hist.push({ txId: Date.now(), amount: amt, time: new Date().toLocaleString(), ts: Date.now(), status: 'Admin Deducted' });
     updates.withdrawHistory = hist.slice(-30);
   }
   
@@ -1836,9 +1910,8 @@ function adjustBalance(id, type) {
   if (window.db) {
     window.db.ref('tp_users/' + id).update(updates)
       .then(() => {
-        addAdminLog(type === 'add' ? 'balance_add' : 'balance_deduct', id, (type === 'add' ? 'Added' : 'Deducted') + ' ₹' + amt);
-        showToast((type === 'add' ? '₹' + amt + ' जोड़े गए!' : '₹' + amt + ' कटे!'), 'success');
-        // Force re-render
+        addAdminLog(type === 'add' ? 'balance_add' : 'balance_deduct', id, (type === 'add' ? 'Added to Bonus' : 'Deducted') + ' ₹' + amt);
+        showToast((type === 'add' ? '₹' + amt + ' बोनस में जोड़े गए!' : '₹' + amt + ' कटे!'), 'success');
         renderContent(true);
       })
       .catch(e => showToast('Error: ' + e.message, 'error'));
