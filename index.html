@@ -20,20 +20,14 @@
       };
       firebase.initializeApp(firebaseConfig);
       window.db = firebase.database();
-      console.log("🔥 Firebase Connected Successfully");
-    } catch(e) { 
-      console.error("Firebase init error:", e); 
-      window.db = null;
-    }
+    } catch(e) { console.error("Firebase init error:", e); window.db = null; }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f172a; font-family: 'Poppins', sans-serif; color: #f8fafc; overflow: hidden; }
     .app { width: 100vw; height: 100vh; max-width: 480px; margin: 0 auto; background: #0f172a; display: flex; flex-direction: column; position: relative; }
-    @media (min-width: 768px) {
-      .app { max-width: 900px; }
-    }
+    @media (min-width: 768px) { .app { max-width: 900px; } }
     .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; text-align: center; }
     .login-box { width: 100%; max-width: 320px; background: rgba(255,255,255,0.05); padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
     .login-box input { width: 100%; padding: 12px; margin-bottom: 16px; border-radius: 12px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; text-align: center; outline: none; font-size: 14px; }
@@ -57,119 +51,59 @@
     .card-title { font-size: 12px; font-weight: bold; margin-bottom: 6px; }
     .btn-sm { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; border: none; cursor: pointer; color: white; transition: all 0.15s; }
     .btn-sm:active { transform: scale(0.93); }
-    .btn-green { background: #22c55e; }
-    .btn-red { background: #ef4444; }
-    .btn-blue { background: #3b82f6; }
-    .btn-yellow { background: #eab308; color: #1e293b; }
-    .btn-purple { background: #8b5cf6; }
-    .btn-orange { background: #f97316; }
-    .btn-gray { background: #64748b; }
-    .btn-cyan { background: #06b6d4; }
+    .btn-green { background: #22c55e; } .btn-red { background: #ef4444; } .btn-blue { background: #3b82f6; }
+    .btn-yellow { background: #eab308; color: #1e293b; } .btn-purple { background: #8b5cf6; }
+    .btn-orange { background: #f97316; } .btn-gray { background: #64748b; } .btn-cyan { background: #06b6d4; }
     .btn-xs { padding: 2px 6px; font-size: 8px; border-radius: 3px; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
     .flex-center { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-    .gap-1 { gap: 3px; }
-    .gap-2 { gap: 6px; }
-    .text-xs { font-size: 10px; }
-    .text-sm { font-size: 12px; }
-    .text-gray { color: #94a3b8; }
-    .text-green { color: #22c55e; }
-    .text-red { color: #ef4444; }
-    .text-yellow { color: #fbbf24; }
-    .text-white { color: #f8fafc; }
-    .mt-1 { margin-top: 3px; }
-    .mt-2 { margin-top: 6px; }
-    .mb-1 { margin-bottom: 3px; }
-    .mb-2 { margin-bottom: 6px; }
-    .w-full { width: 100%; }
-    .hidden { display: none !important; }
+    .text-xs { font-size: 10px; } .text-sm { font-size: 12px; } .text-gray { color: #94a3b8; }
+    .text-green { color: #22c55e; } .text-red { color: #ef4444; } .text-yellow { color: #fbbf24; } .text-white { color: #f8fafc; }
+    .w-full { width: 100%; } .hidden { display: none !important; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     .input-field { width: 100%; padding: 6px 10px; border-radius: 6px; background: #0f172a; border: 1px solid #334155; color: white; outline: none; font-size: 12px; }
     .input-field:focus { border-color: #fbbf24; }
-    .input-field::placeholder { color: #64748b; }
     .toast { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); pointer-events: none; }
     .toast-inner { background: #1e293b; border: 2px solid #22c55e; padding: 20px 28px; border-radius: 14px; text-align: center; animation: popIn 0.3s ease-out; }
-    .toast-inner .icon { font-size: 40px; margin-bottom: 4px; }
-    .toast-inner .msg { font-weight: bold; font-size: 14px; }
+    .toast-inner .icon { font-size: 40px; margin-bottom: 4px; } .toast-inner .msg { font-weight: bold; font-size: 14px; }
     .toast.hidden { display: none; }
     @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     .search-input { width: 100%; padding: 6px 12px; border-radius: 8px; background: #1e293b; border: 1px solid #334155; color: white; outline: none; font-size: 12px; }
-    .search-input:focus { border-color: #fbbf24; }
     .badge { padding: 1px 6px; border-radius: 10px; font-size: 9px; font-weight: bold; }
-    .badge-pending { background: #eab308; color: #1e293b; }
-    .badge-approved { background: #22c55e; color: white; }
-    .badge-rejected { background: #ef4444; color: white; }
-    .badge-blocked { background: #ef4444; color: white; }
+    .badge-pending { background: #eab308; color: #1e293b; } .badge-approved { background: #22c55e; color: white; }
+    .badge-rejected { background: #ef4444; color: white; } .badge-blocked { background: #ef4444; color: white; }
     .badge-active { background: #22c55e; color: white; }
-    .badge-deleted { background: #64748b; color: white; }
-    .badge-restored { background: #22c55e; color: white; }
     .loading { text-align: center; padding: 30px; color: #64748b; }
     .loading .spinner { width: 20px; height: 20px; border: 3px solid #334155; border-top-color: #fbbf24; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 8px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .log-entry { padding: 4px 6px; border-bottom: 1px solid #1e293b; font-size: 10px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
-    .log-entry:last-child { border-bottom: none; }
-    .log-time { color: #64748b; font-size: 9px; }
-    .log-action { font-weight: bold; }
-    .log-action.delete { color: #ef4444; }
-    .log-action.restore { color: #22c55e; }
-    .log-action.block { color: #f97316; }
-    .log-action.unblock { color: #22c55e; }
-
     .stat-box { background: #0f172a; padding: 8px; border-radius: 8px; text-align: center; border: 1px solid #334155; }
-    .stat-box .num { font-size: 20px; font-weight: bold; }
-    .stat-box .label { font-size: 9px; color: #94a3b8; }
-
+    .stat-box .num { font-size: 20px; font-weight: bold; } .stat-box .label { font-size: 9px; color: #94a3b8; }
     .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .report-item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #1e293b; font-size: 11px; }
-    .report-item:last-child { border-bottom: none; }
-    
-    .referral-entry { padding: 4px 6px; border-bottom: 1px solid #1e293b; font-size: 11px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 3px; }
-    .referral-entry:last-child { border-bottom: none; }
-
-    .del-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 11px; padding: 0 3px; font-weight: bold; }
-    .del-btn:hover { color: #ff6666; }
-    .res-btn { background: none; border: none; color: #22c55e; cursor: pointer; font-size: 11px; padding: 0 3px; font-weight: bold; }
-    .res-btn:hover { color: #4ade80; }
-
-    .deleted-item { opacity: 0.5; text-decoration: line-through; }
     .user-collapse { background: #0f172a; padding: 6px 8px; border-radius: 6px; margin-top: 4px; }
-    .user-collapse .item { display: flex; justify-content: space-between; font-size: 10px; padding: 2px 0; border-bottom: 1px solid #1e293b; flex-wrap: wrap; gap: 2px; }
-    .user-collapse .item:last-child { border-bottom: none; }
     .history-item { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #1e293b; font-size: 10px; flex-wrap: wrap; gap: 3px; }
     .history-item:last-child { border-bottom: none; }
-    
     .withdraw-detail { font-size: 10px; color: #94a3b8; line-height: 1.6; }
     .withdraw-detail span { color: #f8fafc; font-weight: 500; }
-
     .menu-container { position: relative; display: inline-block; }
     .menu-dots { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; font-weight: bold; }
-    .menu-dots:hover { color: #fbbf24; }
     .menu-dropdown { display: none; position: absolute; right: 0; top: 26px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; min-width: 200px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 350px; overflow-y: auto; }
     .menu-dropdown.show { display: block; }
     .menu-dropdown .menu-item { padding: 6px 12px; font-size: 11px; color: #f8fafc; cursor: pointer; border-bottom: 1px solid #334155; transition: background 0.15s; }
     .menu-dropdown .menu-item:last-child { border-bottom: none; }
     .menu-dropdown .menu-item:hover { background: #334155; }
-    .menu-dropdown .menu-item .icon { margin-right: 6px; }
     .menu-overlay { position: fixed; inset: 0; z-index: 40; display: none; }
     .menu-overlay.show { display: block; }
-
-    .admin-balance-update {
-      animation: adminBalanceFlash 0.5s ease-in-out;
-    }
-    @keyframes adminBalanceFlash {
-      0% { background-color: #1e293b; }
-      50% { background-color: #4ade80; color: #0f172a; }
-      100% { background-color: #1e293b; }
-    }
+    .game-control-card { background: #0f172a; border-radius: 10px; padding: 10px; border: 2px solid; }
+    .game-on { border-color: #22c55e; }
+    .game-off { border-color: #ef4444; opacity: 0.7; }
+    .live-player-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border-bottom: 1px solid #334155; font-size: 11px; }
+    .live-player-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
-
 <div class="app" id="app">
-
-  <!-- LOGIN SCREEN -->
   <div id="loginScreen" class="login-screen">
     <div class="text-7xl mb-3">👑</div>
     <h1 class="text-3xl font-extrabold text-yellow-500 mb-1">एडमिन पैनल</h1>
@@ -180,27 +114,17 @@
       <p class="text-gray-500 text-xs mt-3">डिफ़ॉल्ट पासवर्ड: admin123</p>
     </div>
   </div>
-
-  <!-- ADMIN PANEL -->
   <div id="adminPanel" style="display:none;flex-direction:column;height:100vh;">
-
     <div class="header">
       <h1>👑 एडमिन पैनल</h1>
       <div class="flex-center" style="flex-wrap:wrap;gap:4px;">
-        <div class="status" id="liveStatus">
-          <span class="dot offline" id="statusDot"></span>
-          <span id="statusText">कनेक्ट नहीं</span>
-        </div>
+        <div class="status" id="liveStatus"><span class="dot offline" id="statusDot"></span><span id="statusText">कनेक्ट नहीं</span></div>
         <button onclick="forceRefreshAdmin()" class="btn-sm btn-cyan" style="padding:3px 8px;font-size:9px;">🔄 फोर्स</button>
         <button onclick="refreshData()" class="btn-sm btn-gray" style="padding:3px 8px;">🔄</button>
         <button onclick="doLogout()" class="btn-sm btn-red" style="padding:3px 8px;">लॉगआउट</button>
       </div>
     </div>
-
-    <div class="content" id="contentArea">
-      <div class="loading"><div class="spinner"></div>लोड हो रहा है...</div>
-    </div>
-
+    <div class="content" id="contentArea"><div class="loading"><div class="spinner"></div>लोड हो रहा है...</div></div>
     <div class="nav" id="navBar">
       <div class="nav-item active" onclick="setTab('home')" id="nav_home"><span class="icon">🏠</span>होम</div>
       <div class="nav-item" onclick="setTab('users')" id="nav_users"><span class="icon">👥</span>यूजर</div>
@@ -212,159 +136,50 @@
       <div class="nav-item" onclick="setTab('logs')" id="nav_logs"><span class="icon">📋</span>लॉग</div>
       <div class="nav-item" onclick="setTab('trash')" id="nav_trash"><span class="icon">🗑️</span>डिब्बा</div>
     </div>
-
-    <div id="toast" class="toast hidden">
-      <div class="toast-inner">
-        <div class="icon" id="toastIcon">✅</div>
-        <div class="msg" id="toastMsg">Action Successful</div>
-      </div>
-    </div>
+    <div id="toast" class="toast hidden"><div class="toast-inner"><div class="icon" id="toastIcon">✅</div><div class="msg" id="toastMsg">Action Successful</div></div></div>
   </div>
 </div>
 
 <script>
-// ============================================================
-// ====================== CONFIG ===============================
-// ============================================================
 const ADMIN_PASSWORD = "admin123";
 const SESSION_KEY = 'tp_admin_session';
 const defaultConfig = {
-  telegramLink: "https://t.me/royalcasino",
-  whatsappLink: "https://wa.me/919999999999",
-  minWithdraw: 100,
-  promoCodes: [],
-  bankList: ["SBI", "HDFC", "ICICI", "Axis", "Other"],
-  fakeOnline: 50,
-  fakePlaying: 10,
-  depositAmounts: [100, 200, 500, 1000],
-  broadcastMsg: ""
+  telegramLink: "https://t.me/royalcasino", whatsappLink: "https://wa.me/919999999999",
+  minWithdraw: 100, promoCodes: [], bankList: ["SBI", "HDFC", "ICICI", "Axis", "Other"],
+  fakeOnline: 50, fakePlaying: 10, depositAmounts: [100, 200, 500, 1000], broadcastMsg: "",
+  withdrawTax: 5, depositBonusPercent: 5,
+  referralRewards: { 1: 100, 2: 200, 3: 300, 4: 400, 5: 500, 6: 600, 7: 700, 8: 800, 9: 900, 10: 1000 },
+  card1Title: "PLAY\nLOCAL", card2Title: "MINES", card3Title: "DRAGON\nVS TIGER", card4Title: "LEARN &\nPRACTICE",
+  logoTitle: "TEEN PATTI", logoSubtitle: "Play • Learn • Win",
+  cardImages: { playLocal: "", createPrivate: "", joinPrivate: "", learnPractice: "" },
+  gameStatus: { teenPatti: true, mines: true, dragonTiger: true }
 };
 
-// ============================================================
-// ====================== STATE ================================
-// ============================================================
-let users = {};
-let trashUsers = {};
-let config = { ...defaultConfig };
-let liveTables = {};
-let activeTab = 'home';
-let searchQuery = '';
-let isSearching = false;
-let isRendering = false;
-let renderTimer = null;
-let dataLoaded = false;
-let listenersActive = false;
-let adminLogs = [];
+let users = {}, trashUsers = {}, config = { ...defaultConfig }, liveTables = {}, adminLogs = [];
+let activeTab = 'home', searchQuery = '', isSearching = false, isRendering = false, renderTimer = null, dataLoaded = false;
+let userListener = null, trashListener = null, configListener = null, tablesListener = null, logsListener = null;
 
-let userListener = null;
-let trashListener = null;
-let configListener = null;
-let tablesListener = null;
-let logsListener = null;
-
-// ============================================================
-// ====================== FIREBASE =============================
-// ============================================================
 function initFirebase() {
-  if (!window.db) {
-    document.getElementById('liveStatus').innerHTML = '<span class="dot offline"></span> DB Error';
-    return;
-  }
-
+  if (!window.db) return;
   document.getElementById('liveStatus').innerHTML = '<span class="dot online" id="statusDot"></span> कनेक्टेड';
   detachListeners();
-
   try {
     userListener = window.db.ref('tp_users');
-    userListener.on('value', (snap) => {
-      const newUsers = snap.val() || {};
-      const changed = JSON.stringify(users) !== JSON.stringify(newUsers);
-      users = newUsers;
-      dataLoaded = true;
-      if (changed && !isSearching) {
-        if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-        renderContent(true);
-      }
-    });
-
-    trashListener = window.db.ref('tp_trash');
-    trashListener.on('value', (snap) => {
-      trashUsers = snap.val() || {};
-      if (!isSearching) scheduleRender();
-    });
-
-    configListener = window.db.ref('tp_config');
-    configListener.on('value', (snap) => {
-      const val = snap.val();
-      if (!val) {
-        config = { ...defaultConfig };
-        window.db.ref('tp_config').set(config);
-      } else {
-        config = { ...defaultConfig, ...val };
-      }
-      if (!isSearching) scheduleRender();
-    });
-
-    tablesListener = window.db.ref('tp_live_tables');
-    tablesListener.on('value', (snap) => {
-      liveTables = snap.val() || {};
-      if (!isSearching) scheduleRender();
-    });
-
-    logsListener = window.db.ref('tp_admin_logs');
-    logsListener.on('value', (snap) => {
-      adminLogs = snap.val() || [];
-      if (!isSearching) scheduleRender();
-    });
-
-    listenersActive = true;
-  } catch(e) {
-    console.error("Firebase listener error:", e);
-    document.getElementById('contentArea').innerHTML = '<div class="card text-red-400">Firebase Error: ' + e.message + '</div>';
-  }
+    userListener.on('value', (snap) => { const newUsers = snap.val() || {}; const changed = JSON.stringify(users) !== JSON.stringify(newUsers); users = newUsers; dataLoaded = true; if (changed && !isSearching) { if (renderTimer) clearTimeout(renderTimer); renderContent(true); } });
+    trashListener = window.db.ref('tp_trash'); trashListener.on('value', (snap) => { trashUsers = snap.val() || {}; if (!isSearching) scheduleRender(); });
+    configListener = window.db.ref('tp_config'); configListener.on('value', (snap) => { const val = snap.val(); if (!val) { config = { ...defaultConfig }; window.db.ref('tp_config').set(config); } else { config = { ...defaultConfig, ...val }; if(!config.cardImages) config.cardImages = { playLocal: "", createPrivate: "", joinPrivate: "", learnPractice: "" }; if(!config.gameStatus) config.gameStatus = { teenPatti: true, mines: true, dragonTiger: true }; } if (!isSearching) scheduleRender(); });
+    tablesListener = window.db.ref('tp_live_tables'); tablesListener.on('value', (snap) => { liveTables = snap.val() || {}; if (!isSearching) scheduleRender(); });
+    logsListener = window.db.ref('tp_admin_logs'); logsListener.on('value', (snap) => { adminLogs = snap.val() || []; if (!isSearching) scheduleRender(); });
+  } catch(e) { console.error("Firebase listener error:", e); }
 }
-
-function detachListeners() {
-  try {
-    if (userListener) { userListener.off(); userListener = null; }
-    if (trashListener) { trashListener.off(); trashListener = null; }
-    if (configListener) { configListener.off(); configListener = null; }
-    if (tablesListener) { tablesListener.off(); tablesListener = null; }
-    if (logsListener) { logsListener.off(); logsListener = null; }
-  } catch(e) {}
-  listenersActive = false;
-}
-
-// ============================================================
-// ====================== RENDER THROTTLING ===================
-// ============================================================
-function scheduleRender(immediate = false) {
-  if (isSearching && !immediate) return;
-  if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-  if (immediate) {
-    renderContent(true);
-  } else {
-    renderTimer = setTimeout(() => {
-      renderTimer = null;
-      renderContent();
-    }, 200);
-  }
-}
-
+function detachListeners() { try { if (userListener) userListener.off(); if (trashListener) trashListener.off(); if (configListener) configListener.off(); if (tablesListener) tablesListener.off(); if (logsListener) logsListener.off(); } catch(e) {} userListener = trashListener = configListener = tablesListener = logsListener = null; }
+function scheduleRender(immediate = false) { if (isSearching && !immediate) return; if (renderTimer) clearTimeout(renderTimer); if (immediate) renderContent(true); else renderTimer = setTimeout(() => { renderTimer = null; renderContent(); }, 200); }
 function renderContent(force = false) {
   if (!force && (isRendering || isSearching)) return;
-  isRendering = true;
-  const area = document.getElementById('contentArea');
-  
+  isRendering = true; const area = document.getElementById('contentArea');
   try {
-    if (!dataLoaded && !force) {
-      area.innerHTML = '<div class="loading"><div class="spinner"></div>डेटा लोड हो रहा है...</div>';
-      isRendering = false;
-      return;
-    }
-
+    if (!dataLoaded && !force) { area.innerHTML = '<div class="loading"><div class="spinner"></div>डेटा लोड हो रहा है...</div>'; isRendering = false; return; }
     if (force) dataLoaded = true;
-
     switch(activeTab) {
       case 'home': area.innerHTML = renderHome(); break;
       case 'users': area.innerHTML = renderUsers(); break;
@@ -377,439 +192,222 @@ function renderContent(force = false) {
       case 'trash': area.innerHTML = renderTrash(); break;
       default: area.innerHTML = '<div class="card text-gray">पेज नहीं मिला</div>';
     }
-  } catch(e) {
-    area.innerHTML = '<div class="card text-red-400">Error: ' + escapeHtml(e.message) + '</div>';
-    console.error('Render Error:', e);
-  }
+  } catch(e) { area.innerHTML = '<div class="card text-red-400">Error: ' + escapeHtml(e.message) + '</div>'; }
   isRendering = false;
 }
-
-// ============================================================
-// ====================== FORCE REFRESH =======================
-// ============================================================
 function forceRefreshAdmin() {
-  if (!window.db) {
-    showToast('Database not connected', 'error');
-    return;
-  }
-  
+  if (!window.db) return showToast('Database not connected', 'error');
   showToast('🔄 डेटा रीफ्रेश हो रहा है...', 'info');
-  
-  Promise.all([
-    window.db.ref('tp_users').once('value'),
-    window.db.ref('tp_trash').once('value'),
-    window.db.ref('tp_config').once('value'),
-    window.db.ref('tp_live_tables').once('value'),
-    window.db.ref('tp_admin_logs').once('value')
-  ]).then(([usersSnap, trashSnap, configSnap, tablesSnap, logsSnap]) => {
-    users = usersSnap.val() || {};
-    trashUsers = trashSnap.val() || {};
-    config = { ...defaultConfig, ...(configSnap.val() || {}) };
-    liveTables = tablesSnap.val() || {};
-    adminLogs = logsSnap.val() || [];
-    dataLoaded = true;
-    
-    renderContent(true);
-    showToast('✅ डेटा रीफ्रेश हो गया!', 'success');
-  }).catch(e => {
-    showToast('Error: ' + e.message, 'error');
+  Promise.all([ window.db.ref('tp_users').once('value'), window.db.ref('tp_trash').once('value'), window.db.ref('tp_config').once('value'), window.db.ref('tp_live_tables').once('value'), window.db.ref('tp_admin_logs').once('value') ]).then(([usersSnap, trashSnap, configSnap, tablesSnap, logsSnap]) => {
+    users = usersSnap.val() || {}; trashUsers = trashSnap.val() || {}; config = { ...defaultConfig, ...(configSnap.val() || {}) }; liveTables = tablesSnap.val() || {}; adminLogs = logsSnap.val() || {};
+    dataLoaded = true; renderContent(true); showToast('✅ डेटा रीफ्रेश हो गया!', 'success');
   });
 }
+function checkSession() { return sessionStorage.getItem(SESSION_KEY) === 'true'; }
+function doLogin() { if (document.getElementById('adminPass').value === ADMIN_PASSWORD) { sessionStorage.setItem(SESSION_KEY, 'true'); showAdminPanel(); } else showToast('गलत पासवर्ड!', 'error'); }
+function doLogout() { if (confirm('क्या आप लॉगआउट करना चाहते हैं?')) { sessionStorage.removeItem(SESSION_KEY); document.getElementById('adminPanel').style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('adminPass').value = ''; detachListeners(); } }
+function showAdminPanel() { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('adminPanel').style.display = 'flex'; dataLoaded = false; initFirebase(); setTab('home'); }
+function showToast(msg, type = 'success') { const toast = document.getElementById('toast'); const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' }; document.getElementById('toastIcon').textContent = icons[type] || '✅'; document.getElementById('toastMsg').textContent = msg; toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 2500); }
+function setTab(tab) { activeTab = tab; document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); const navEl = document.getElementById('nav_' + tab); if (navEl) navEl.classList.add('active'); isSearching = false; searchQuery = ''; if (renderTimer) clearTimeout(renderTimer); renderContent(); }
+function refreshData() { detachListeners(); document.getElementById('contentArea').innerHTML = '<div class="loading"><div class="spinner"></div>डेटा रीफ्रेश हो रहा है...</div>'; setTimeout(() => { initFirebase(); showToast('डेटा रीफ्रेश हो गया!', 'success'); }, 600); }
+function startSearch() { isSearching = true; }
+function doSearch() { const el = document.getElementById('searchInput'); if (el) { searchQuery = el.value.toLowerCase().trim(); renderContent(true); } }
+function exitSearch() { isSearching = false; searchQuery = ''; const input = document.getElementById('searchInput'); if (input) input.value = ''; renderContent(); }
+document.addEventListener('keydown', function(e) { if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'searchInput') doSearch(); if (e.key === 'Escape' && isSearching) exitSearch(); });
+function toggleMenu(userId, event) { event.stopPropagation(); document.querySelectorAll('.menu-dropdown').forEach(el => { if (el.id !== 'menu_' + userId) el.classList.remove('show'); }); document.querySelectorAll('.menu-overlay').forEach(el => { if (el.id !== 'overlay_' + userId) el.classList.remove('show'); }); const menu = document.getElementById('menu_' + userId); const overlay = document.getElementById('overlay_' + userId); if (menu) menu.classList.toggle('show'); if (overlay) overlay.classList.toggle('show'); }
+function closeAllMenus() { document.querySelectorAll('.menu-dropdown').forEach(el => el.classList.remove('show')); document.querySelectorAll('.menu-overlay').forEach(el => el.classList.remove('show')); }
+document.addEventListener('click', closeAllMenus);
+function saveUserToDB(id, data) { if (window.db) { window.db.ref('tp_users/' + id).update(data).then(() => { if (users[id]) users[id] = { ...users[id], ...data }; if (!isSearching) { if (renderTimer) clearTimeout(renderTimer); renderContent(true); } showToast('✅ अपडेट सफल!', 'success'); }).catch(e => showToast('DB Error: ' + e.message, 'error')); } }
+function saveConfigToDB() { if (window.db) window.db.ref('tp_config').set(config).catch(e => showToast('Config Error: ' + e.message, 'error')); }
+function addAdminLog(action, userId, details = '') { const logEntry = { timestamp: Date.now(), time: new Date().toLocaleString(), action, userId, userName: users[userId] ? users[userId].name : 'Unknown', details }; if (window.db) window.db.ref('tp_admin_logs').push(logEntry).catch(e => console.error('Log error:', e)); adminLogs.push(logEntry); }
+function escapeHtml(text) { if (text === null || text === undefined) return ''; const div = document.createElement('div'); div.textContent = String(text); return div.innerHTML; }
 
-// ============================================================
-// ====================== LOGIN / LOGOUT =======================
-// ============================================================
-function checkSession() {
-  if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-    showAdminPanel();
-    return true;
-  }
-  return false;
-}
-
-function doLogin() {
-  const pass = document.getElementById('adminPass').value;
-  if (pass === ADMIN_PASSWORD) {
-    sessionStorage.setItem(SESSION_KEY, 'true');
-    showAdminPanel();
-  } else {
-    showToast('गलत पासवर्ड!', 'error');
-  }
-}
-
-function doLogout() {
-  if (confirm('क्या आप लॉगआउट करना चाहते हैं?')) {
-    sessionStorage.removeItem(SESSION_KEY);
-    document.getElementById('adminPanel').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('adminPass').value = '';
-    detachListeners();
-  }
-}
-
-function showAdminPanel() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'flex';
-  dataLoaded = false;
-  initFirebase();
-  setTab('home');
-}
-
-// ============================================================
-// ====================== TOAST ================================
-// ============================================================
-function showToast(msg, type = 'success') {
-  const toast = document.getElementById('toast');
-  const icon = document.getElementById('toastIcon');
-  const msgEl = document.getElementById('toastMsg');
-  
-  const icons = {
-    success: '✅',
-    error: '❌',
-    warning: '⚠️',
-    info: 'ℹ️'
-  };
-  icon.textContent = icons[type] || '✅';
-  msgEl.textContent = msg;
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 2500);
-}
-
-// ============================================================
-// ====================== TAB MANAGEMENT =======================
-// ============================================================
-function setTab(tab) {
-  activeTab = tab;
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const navEl = document.getElementById('nav_' + tab);
-  if (navEl) navEl.classList.add('active');
-  
-  isSearching = false;
-  searchQuery = '';
-  
-  if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-  renderContent();
-}
-
-function refreshData() {
-  detachListeners();
-  document.getElementById('contentArea').innerHTML = '<div class="loading"><div class="spinner"></div>डेटा रीफ्रेश हो रहा है...</div>';
-  setTimeout(() => {
-    initFirebase();
-    showToast('डेटा रीफ्रेश हो गया!', 'success');
-  }, 600);
-}
-
-// ============================================================
-// ====================== SEARCH ===============================
-// ============================================================
-function startSearch() {
-  isSearching = true;
-}
-
-function doSearch() {
-  const el = document.getElementById('searchInput');
-  if (el) {
-    searchQuery = el.value.toLowerCase().trim();
-    renderContent(true);
-  }
-}
-
-function exitSearch() {
-  isSearching = false;
-  searchQuery = '';
-  const input = document.getElementById('searchInput');
-  if (input) input.value = '';
-  renderContent();
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'searchInput') {
-    doSearch();
-  }
-  if (e.key === 'Escape' && isSearching) {
-    exitSearch();
-  }
-});
-
-// ============================================================
-// ====================== MENU FUNCTIONS ======================
-// ============================================================
-function toggleMenu(userId, event) {
-  event.stopPropagation();
-  
-  document.querySelectorAll('.menu-dropdown').forEach(el => {
-    if (el.id !== 'menu_' + userId) {
-      el.classList.remove('show');
-    }
-  });
-  
-  document.querySelectorAll('.menu-overlay').forEach(el => {
-    if (el.id !== 'overlay_' + userId) {
-      el.classList.remove('show');
-    }
-  });
-  
-  const menu = document.getElementById('menu_' + userId);
-  const overlay = document.getElementById('overlay_' + userId);
-  
-  if (menu) {
-    menu.classList.toggle('show');
-  }
-  if (overlay) {
-    overlay.classList.toggle('show');
-  }
-}
-
-function closeAllMenus() {
-  document.querySelectorAll('.menu-dropdown').forEach(el => el.classList.remove('show'));
-  document.querySelectorAll('.menu-overlay').forEach(el => el.classList.remove('show'));
-}
-
-document.addEventListener('click', function() {
-  closeAllMenus();
-});
-
-// ============================================================
-// ====================== DB HELPERS ===========================
-// ============================================================
-function saveUserToDB(id, data) {
-  if (window.db) {
-    window.db.ref('tp_users/' + id).update(data)
-      .then(() => {
-        if (users[id]) {
-          users[id] = { ...users[id], ...data };
-        }
-        if (!isSearching) {
-          if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-          renderContent(true);
-        }
-        showToast('✅ अपडेट सफल!', 'success');
-      })
-      .catch(e => showToast('DB Error: ' + e.message, 'error'));
-  }
-}
-
-function saveConfigToDB() {
-  if (window.db) {
-    window.db.ref('tp_config').set(config).catch(e => showToast('Config Error: ' + e.message, 'error'));
-  }
-}
-
-function addAdminLog(action, userId, details = '') {
-  const logEntry = {
-    timestamp: Date.now(),
-    time: new Date().toLocaleString(),
-    action: action,
-    userId: userId,
-    userName: users[userId] ? users[userId].name : (trashUsers[userId] ? trashUsers[userId].name : 'Unknown'),
-    details: details
-  };
-  if (window.db) {
-    window.db.ref('tp_admin_logs').push(logEntry).catch(e => console.error('Log error:', e));
-  }
-  adminLogs.push(logEntry);
-}
-
-function escapeHtml(text) {
-  if (text === null || text === undefined) return '';
-  const div = document.createElement('div');
-  div.textContent = String(text);
-  return div.innerHTML;
-}
-
-// ============================================================
-// ====================== DELETE GHOST IDs =====================
-// ============================================================
 function deleteGhostIds() {
   if (!window.db) return showToast('डेटाबेस कनेक्ट नहीं है', 'error');
-  
-  let ghostIds = [];
-  let updates = {};
-  
-  Object.keys(users).forEach(id => {
-    const u = users[id];
-    if (!u || !u.name || !u.mobile || u.mobile.length < 10 || !u.balance) {
-      ghostIds.push(id);
-      updates['tp_users/' + id] = null;
-    }
-  });
-  
-  if (ghostIds.length === 0) {
-    showToast('✅ कोई फालतू आईडी नहीं मिली!', 'success');
-    return;
-  }
-  
-  if (confirm(ghostIds.length + ' फालतू आईडी मिलीं। क्या आप सभी हटाना चाहते हैं?\n\n' + ghostIds.join(', '))) {
-    window.db.ref().update(updates)
-      .then(() => {
-        ghostIds.forEach(id => {
-          delete users[id];
-          addAdminLog('ghost_delete', id, 'Ghost ID deleted');
-        });
-        showToast(ghostIds.length + ' फालतू आईडी हटा दी गईं! ✅', 'success');
-        scheduleRender(true);
-      })
-      .catch(e => showToast('Error: ' + e.message, 'error'));
-  }
+  let ghostIds = [], updates = {};
+  Object.keys(users).forEach(id => { const u = users[id]; if (!u || !u.name || !u.mobile || u.mobile.length < 10 || !u.balance) { ghostIds.push(id); updates['tp_users/' + id] = null; } });
+  if (ghostIds.length === 0) return showToast('✅ कोई फालतू आईडी नहीं मिली!', 'success');
+  if (confirm(ghostIds.length + ' फालतू आईडी मिलीं। क्या आप सभी हटाना चाहते हैं?\n\n' + ghostIds.join(', '))) { window.db.ref().update(updates).then(() => { ghostIds.forEach(id => { delete users[id]; addAdminLog('ghost_delete', id, 'Ghost ID deleted'); }); showToast(ghostIds.length + ' फालतू आईडी हटा दी गईं! ✅', 'success'); scheduleRender(true); }); }
 }
 
-// ============================================================
-// ====================== RESTORE USER BY MOBILE ===============
-// ============================================================
-function restoreUserByMobile() {
-  const mobile = document.getElementById('restoreMobileInput').value.trim();
-  const resultEl = document.getElementById('restoreResult');
-  
-  if (!mobile || mobile.length !== 10) {
-    resultEl.innerHTML = '<span class="text-red-400">❌ कृपया 10 अंकों का मोबाइल नंबर दर्ज करें</span>';
-    return;
-  }
+// GAME TOGGLE FUNCTIONS
+function toggleGame(gameKey) {
+  if (!window.db) return showToast('DB not connected', 'error');
+  if (!config.gameStatus) config.gameStatus = { teenPatti: true, mines: true, dragonTiger: true };
+  const newState = !config.gameStatus[gameKey];
+  config.gameStatus[gameKey] = newState;
+  window.db.ref('tp_config/gameStatus').set(config.gameStatus).then(() => {
+    const names = { teenPatti: 'Teen Patti', mines: 'Mines', dragonTiger: 'Dragon vs Tiger' };
+    addAdminLog(newState ? 'game_enable' : 'game_disable', 'system', names[gameKey] + ' ' + (newState ? 'चालू' : 'बंद'));
+    showToast((newState ? '✅ ' : '🔒 ') + names[gameKey] + ' ' + (newState ? 'चालू कर दिया गया!' : 'बंद कर दिया गया!'), newState ? 'success' : 'warning');
+    renderContent(true);
+  }).catch(e => showToast('Error: ' + e.message, 'error'));
+}
 
-  let foundInTrash = false;
-  let trashUserId = null;
+// GET LIVE PLAYERS - Who is playing which game
+function getLivePlayers() {
+  const livePlayers = { teenPatti: [], mines: [], dragonTiger: [] };
   
-  Object.entries(trashUsers).forEach(([id, u]) => {
-    if (u.mobile === mobile) {
-      foundInTrash = true;
-      trashUserId = id;
+  // Teen Patti - from live tables
+  Object.values(liveTables).forEach(table => {
+    if (table && table.players && table.phase !== 'gameover') {
+      table.players.forEach(p => {
+        if (!p.isBot && p.id) {
+          const user = users[p.id];
+          livePlayers.teenPatti.push({ id: p.id, name: p.name, game: 'Teen Patti', tableBoot: table.bootAmount, phase: table.phase, chips: p.chips });
+        }
+      });
     }
   });
-
-  if (foundInTrash && trashUserId) {
-    if (!window.db) {
-      resultEl.innerHTML = '<span class="text-red-400">❌ डेटाबेस कनेक्ट नहीं है</span>';
-      return;
-    }
-    
-    const trashRef = window.db.ref('tp_trash/' + trashUserId);
-    const userRef = window.db.ref('tp_users/' + trashUserId);
-    
-    trashRef.once('value').then(snap => {
-      if (snap.val()) {
-        userRef.set(snap.val()).then(() => {
-          trashRef.remove().then(() => {
-            addAdminLog('trash_restore', trashUserId, 'Restored by mobile: ' + mobile);
-            resultEl.innerHTML = `<span class="text-green-400">✅ यूजर (${escapeHtml(snap.val().name || 'N/A')}) वापस लाया गया!</span>`;
-            showToast('✅ यूजर रिस्टोर हो गया!', 'success');
-            document.getElementById('restoreMobileInput').value = '';
-            scheduleRender(true);
-          });
-        });
-      } else {
-        resultEl.innerHTML = '<span class="text-red-400">❌ डिब्बे में यूजर नहीं मिला</span>';
-      }
-    }).catch(e => {
-      resultEl.innerHTML = '<span class="text-red-400">❌ Error: ' + e.message + '</span>';
-    });
-    return;
-  }
-
-  let foundInUsers = false;
+  
+  // Mines and Dragon Tiger - from user data
   Object.values(users).forEach(u => {
-    if (u.mobile === mobile) {
-      foundInUsers = true;
+    if (u.isPlaying && u.currentGame) {
+      if (u.currentGame === 'mines') {
+        livePlayers.mines.push({ id: u.id, name: u.name, game: 'Mines', phase: 'Playing' });
+      } else if (u.currentGame === 'dragonTiger') {
+        livePlayers.dragonTiger.push({ id: u.id, name: u.name, game: 'Dragon vs Tiger', phase: 'Playing' });
+      }
     }
   });
-
-  if (foundInUsers) {
-    resultEl.innerHTML = '<span class="text-yellow-400">⚠️ यह यूजर पहले से मौजूद है!</span>';
-    return;
-  }
-
-  resultEl.innerHTML = '<span class="text-red-400">❌ इस मोबाइल नंबर का कोई हटाया गया यूजर नहीं मिला</span>';
+  
+  return livePlayers;
 }
 
-// ============================================================
-// ====================== RENDER: HOME =========================
-// ============================================================
 function renderHome() {
-  let today = 0, online = 0, playing = 0, pending = 0, totalBalance = 0;
-  let blockedUsers = 0, totalDeposits = 0, totalWithdrawals = 0;
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-
-  Object.values(users).forEach(u => {
-    if (u.createdAt && u.createdAt >= startToday) today++;
-    if (u.isOnline) online++;
-    if (u.isPlaying) playing++;
-    totalBalance += (u.balance || 0);
-    if (u.isBlocked) blockedUsers++;
-    if (u.depositHistory) {
-      u.depositHistory.forEach(d => {
-        if (!d._deleted) totalDeposits += (parseInt(d.amount) || 0);
-      });
-    }
-    if (u.withdrawHistory) {
-      u.withdrawHistory.forEach(w => {
-        if (!w._deleted && w.status === 'Approved') totalWithdrawals += (parseInt(w.amount) || 0);
-      });
-    }
-    if (Array.isArray(u.withdrawHistory)) {
-      pending += u.withdrawHistory.filter(tx => tx.status === 'Pending' && !tx._deleted).length;
-    }
-  });
-
-  let blockedHtml = '';
-  Object.values(users).filter(u => u.isBlocked).forEach(u => {
-    blockedHtml += `
-      <div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;">
-        <span>${escapeHtml(u.name)} (${escapeHtml(u.mobile)})</span>
-        <button onclick="toggleBlock('${u.id}')" class="btn-sm btn-green" style="font-size:9px;">🔓 अनब्लॉक</button>
-      </div>
-    `;
-  });
-
-  let pendingHtml = '';
-  Object.values(users).forEach(u => {
-    (u.withdrawHistory || []).forEach(tx => {
-      if (tx.status === 'Pending' && !tx._deleted) {
-        const bank = u.bankDetails || {};
-        pendingHtml += `
-          <div class="card" style="border-color:#ef4444;">
-            <div class="flex-between">
-              <div>
-                <div class="text-sm font-bold">${escapeHtml(u.name)}</div>
-                <div class="text-xs text-yellow-400">₹${tx.amount} | ${escapeHtml(u.mobile)}</div>
-              </div>
-              <div class="flex-center gap-1">
-                <button onclick="approveWithdraw('${u.id}', ${tx.txId})" class="btn-sm btn-green">✅</button>
-                <button onclick="rejectWithdraw('${u.id}', ${tx.txId})" class="btn-sm btn-red">❌</button>
-              </div>
-            </div>
-            <div class="text-xs text-gray mt-1">🏦 ${escapeHtml(bank.bankName || 'N/A')} | ${escapeHtml(bank.accName || 'N/A')}</div>
+  let today = 0, online = 0, playing = 0, pending = 0, totalBalance = 0, blockedUsers = 0, totalDeposits = 0, totalWithdrawals = 0;
+  const now = new Date(); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  Object.values(users).forEach(u => { if (u.createdAt && u.createdAt >= startToday) today++; if (u.isOnline) online++; if (u.isPlaying) playing++; totalBalance += (u.balance || 0); if (u.isBlocked) blockedUsers++; if (u.depositHistory) u.depositHistory.forEach(d => { totalDeposits += (parseInt(d.amount) || 0) + (parseInt(d.bonus) || 0); }); if (u.withdrawHistory) u.withdrawHistory.forEach(w => { if (w.status === 'Approved') totalWithdrawals += (parseInt(w.amount) || 0); }); if (Array.isArray(u.withdrawHistory)) pending += u.withdrawHistory.filter(tx => tx.status === 'Pending').length; });
+  
+  const livePlayers = getLivePlayers();
+  const gameStatus = config.gameStatus || { teenPatti: true, mines: true, dragonTiger: true };
+  
+  // Game Status Control Panel
+  let gameControlHtml = `
+    <div class="card" style="border-color:#3b82f6;">
+      <div class="card-title text-blue-400">🎮 गेम कंट्रोल (चालू/बंद)</div>
+      <div class="grid-3" style="gap:8px;">
+        <div class="game-control-card ${gameStatus.teenPatti ? 'game-on' : 'game-off'}">
+          <div class="text-center">
+            <div class="text-2xl mb-1">🃏</div>
+            <div class="text-xs font-bold mb-1">Teen Patti</div>
+            <div class="text-[10px] ${gameStatus.teenPatti ? 'text-green' : 'text-red'} mb-2">${gameStatus.teenPatti ? '✅ चालू' : '🔒 बंद'}</div>
+            <div class="text-[9px] text-gray mb-2">${livePlayers.teenPatti.length} खिलाड़ी</div>
+            <button onclick="toggleGame('teenPatti')" class="btn-sm ${gameStatus.teenPatti ? 'btn-red' : 'btn-green'} w-full" style="font-size:9px;">${gameStatus.teenPatti ? '🔒 बंद करें' : '✅ चालू करें'}</button>
           </div>
-        `;
-      }
-    });
-  });
-
-  let promoHtml = (config.promoCodes || []).map(p => `
-    <div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:3px 0;">
-      <span class="font-bold">${escapeHtml(p.code)}</span>
-      <span class="text-green">₹${p.amount}</span>
-      <div class="flex-center gap-1">
-        <button onclick="togglePromo('${escapeHtml(p.code)}')" class="btn-sm ${p.isActive ? 'btn-yellow' : 'btn-green'}" style="font-size:9px;">${p.isActive ? 'बंद' : 'चालू'}</button>
-        <button onclick="deletePromo('${escapeHtml(p.code)}')" class="btn-sm btn-red" style="font-size:9px;">✕</button>
+        </div>
+        <div class="game-control-card ${gameStatus.mines ? 'game-on' : 'game-off'}">
+          <div class="text-center">
+            <div class="text-2xl mb-1">💣</div>
+            <div class="text-xs font-bold mb-1">Mines</div>
+            <div class="text-[10px] ${gameStatus.mines ? 'text-green' : 'text-red'} mb-2">${gameStatus.mines ? '✅ चालू' : '🔒 बंद'}</div>
+            <div class="text-[9px] text-gray mb-2">${livePlayers.mines.length} खिलाड़ी</div>
+            <button onclick="toggleGame('mines')" class="btn-sm ${gameStatus.mines ? 'btn-red' : 'btn-green'} w-full" style="font-size:9px;">${gameStatus.mines ? '🔒 बंद करें' : '✅ चालू करें'}</button>
+          </div>
+        </div>
+        <div class="game-control-card ${gameStatus.dragonTiger ? 'game-on' : 'game-off'}">
+          <div class="text-center">
+            <div class="text-2xl mb-1">🐉</div>
+            <div class="text-xs font-bold mb-1">Dragon vs Tiger</div>
+            <div class="text-[10px] ${gameStatus.dragonTiger ? 'text-green' : 'text-red'} mb-2">${gameStatus.dragonTiger ? '✅ चालू' : '🔒 बंद'}</div>
+            <div class="text-[9px] text-gray mb-2">${livePlayers.dragonTiger.length} खिलाड़ी</div>
+            <button onclick="toggleGame('dragonTiger')" class="btn-sm ${gameStatus.dragonTiger ? 'btn-red' : 'btn-green'} w-full" style="font-size:9px;">${gameStatus.dragonTiger ? '🔒 बंद करें' : '✅ चालू करें'}</button>
+          </div>
+        </div>
       </div>
     </div>
-  `).join('');
-
-  let tablesHtml = '';
-  const tableCount = Object.keys(liveTables).length;
-  if (tableCount > 0) {
-    Object.entries(liveTables).forEach(([id, t]) => {
-      const count = t.players ? t.players.length : 0;
-      tablesHtml += `
-        <div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;">
-          <span>बूट: ₹${t.bootAmount || 0} | ${count} खिलाड़ी</span>
-          <button onclick="deleteTable('${id}')" class="btn-sm btn-red" style="font-size:9px;">हटाएं</button>
-        </div>
-      `;
-    });
+  `;
+  
+  // Live Players List
+  let livePlayersHtml = '';
+  const totalLivePlayers = livePlayers.teenPatti.length + livePlayers.mines.length + livePlayers.dragonTiger.length;
+  
+  if (totalLivePlayers === 0) {
+    livePlayersHtml = '<div class="text-center text-gray text-xs py-4">अभी कोई भी गेम नहीं खेल रहा है</div>';
   } else {
-    tablesHtml = '<span class="text-gray text-xs">कोई लाइव टेबल नहीं</span>';
+    if (livePlayers.teenPatti.length > 0) {
+      livePlayersHtml += `<div class="mb-3"><div class="text-xs font-bold text-green mb-1">🃏 Teen Patti (${livePlayers.teenPatti.length})</div>`;
+      livePlayers.teenPatti.forEach(p => {
+        livePlayersHtml += `<div class="live-player-item"><div><span class="text-white font-bold">${escapeHtml(p.name)}</span><span class="text-gray ml-2 text-[9px]">${escapeHtml(p.id)}</span></div><div class="text-right"><span class="text-yellow">₹${p.chips || 0}</span><span class="text-gray ml-2 text-[9px]">बूट: ₹${p.tableBoot || 0}</span></div></div>`;
+      });
+      livePlayersHtml += '</div>';
+    }
+    if (livePlayers.mines.length > 0) {
+      livePlayersHtml += `<div class="mb-3"><div class="text-xs font-bold text-purple-400 mb-1">💣 Mines (${livePlayers.mines.length})</div>`;
+      livePlayers.mines.forEach(p => {
+        livePlayersHtml += `<div class="live-player-item"><div><span class="text-white font-bold">${escapeHtml(p.name)}</span><span class="text-gray ml-2 text-[9px]">${escapeHtml(p.id)}</span></div><div class="text-right"><span class="text-green text-[9px]">खेल रहा है</span></div></div>`;
+      });
+      livePlayersHtml += '</div>';
+    }
+    if (livePlayers.dragonTiger.length > 0) {
+      livePlayersHtml += `<div class="mb-3"><div class="text-xs font-bold text-red-400 mb-1">🐉 Dragon vs Tiger (${livePlayers.dragonTiger.length})</div>`;
+      livePlayers.dragonTiger.forEach(p => {
+        livePlayersHtml += `<div class="live-player-item"><div><span class="text-white font-bold">${escapeHtml(p.name)}</span><span class="text-gray ml-2 text-[9px]">${escapeHtml(p.id)}</span></div><div class="text-right"><span class="text-green text-[9px]">खेल रहा है</span></div></div>`;
+      });
+      livePlayersHtml += '</div>';
+    }
   }
+  
+  let livePlayersCardHtml = `
+    <div class="card" style="border-color:#22c55e;">
+      <div class="card-title text-green flex-between">
+        <span>🎯 लाइव गेम प्लेयर्स (${totalLivePlayers})</span>
+        <span class="text-[9px] text-gray">अभी खेल रहे हैं</span>
+      </div>
+      ${livePlayersHtml}
+    </div>
+  `;
+  
+  let blockedHtml = ''; Object.values(users).filter(u => u.isBlocked).forEach(u => { blockedHtml += `<div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;"><span>${escapeHtml(u.name)} (${escapeHtml(u.mobile)})</span><button onclick="toggleBlock('${u.id}')" class="btn-sm btn-green" style="font-size:9px;">🔓 अनब्लॉक</button></div>`; });
+  let pendingHtml = '';
+  Object.values(users).forEach(u => { (u.withdrawHistory || []).forEach(tx => { if (tx.status === 'Pending') { const bank = u.bankDetails || {}; pendingHtml += `<div class="card" style="border-color:#ef4444;"><div class="flex-between"><div><div class="text-sm font-bold">${escapeHtml(u.name)}</div><div class="text-xs text-yellow-400">₹${tx.amount} | ${escapeHtml(u.mobile)}</div></div><div class="flex-center gap-1"><button onclick="approveWithdraw('${u.id}', ${tx.txId})" class="btn-sm btn-green">✅</button><button onclick="rejectWithdraw('${u.id}', ${tx.txId})" class="btn-sm btn-red">❌</button></div></div><div class="text-xs text-gray mt-1">🏦 ${escapeHtml(bank.bankName || 'N/A')} | ${escapeHtml(bank.accName || 'N/A')}</div></div>`; } }); });
+  let promoHtml = (config.promoCodes || []).map(p => `<div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:3px 0;"><span class="font-bold">${escapeHtml(p.code)}</span><span class="text-green">₹${p.amount}</span><div class="flex-center gap-1"><button onclick="togglePromo('${escapeHtml(p.code)}')" class="btn-sm ${p.isActive ? 'btn-yellow' : 'btn-green'}" style="font-size:9px;">${p.isActive ? 'बंद' : 'चालू'}</button><button onclick="deletePromo('${escapeHtml(p.code)}')" class="btn-sm btn-red" style="font-size:9px;">✕</button></div></div>`).join('');
+  let tablesHtml = ''; const tableCount = Object.keys(liveTables).length;
+  if (tableCount > 0) { Object.entries(liveTables).forEach(([id, t]) => { const count = t.players ? t.players.length : 0; tablesHtml += `<div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;"><span>बूट: ₹${t.bootAmount || 0} | ${count} खिलाड़ी | ${t.phase || 'lobby'}</span><button onclick="deleteTable('${id}')" class="btn-sm btn-red" style="font-size:9px;">हटाएं</button></div>`; }); } else tablesHtml = '<span class="text-gray text-xs">कोई लाइव टेबल नहीं</span>';
+  
+  let imagesHtml = `
+    <div class="card" style="border-color:#8b5cf6;">
+      <div class="card-title text-purple-400">🖼️ गेम कार्ड इमेज (imgbb)</div>
+      <p class="text-xs text-gray-400 mb-2">इमेज साइज: 200x200 px (स्क्वायर) होनी चाहिए।</p>
+      <div class="text-xs text-gray-300 mb-1">1. PLAY LOCAL</div>
+      <div class="flex-center gap-2 mb-2"><input type="text" id="img_playLocal" value="${escapeHtml(config.cardImages?.playLocal || '')}" placeholder="imgbb direct link (i.ibb.co...)" class="input-field" style="flex:1;"><button onclick="updateCardImage('playLocal')" class="btn-sm btn-purple">सेव</button></div>
+      <div class="text-xs text-gray-300 mb-1">2. MINES</div>
+      <div class="flex-center gap-2 mb-2"><input type="text" id="img_createPrivate" value="${escapeHtml(config.cardImages?.createPrivate || '')}" placeholder="imgbb direct link (i.ibb.co...)" class="input-field" style="flex:1;"><button onclick="updateCardImage('createPrivate')" class="btn-sm btn-purple">सेव</button></div>
+      <div class="text-xs text-gray-300 mb-1">3. DRAGON VS TIGER</div>
+      <div class="flex-center gap-2 mb-2"><input type="text" id="img_joinPrivate" value="${escapeHtml(config.cardImages?.joinPrivate || '')}" placeholder="imgbb direct link (i.ibb.co...)" class="input-field" style="flex:1;"><button onclick="updateCardImage('joinPrivate')" class="btn-sm btn-purple">सेव</button></div>
+      <div class="text-xs text-gray-300 mb-1">4. LEARN & PRACTICE</div>
+      <div class="flex-center gap-2 mb-2"><input type="text" id="img_learnPractice" value="${escapeHtml(config.cardImages?.learnPractice || '')}" placeholder="imgbb direct link (i.ibb.co...)" class="input-field" style="flex:1;"><button onclick="updateCardImage('learnPractice')" class="btn-sm btn-purple">सेव</button></div>
+    </div>
+  `;
+
+  let textsHtml = `
+    <div class="card" style="border-color:#eab308;">
+      <div class="card-title text-yellow-400">⚙️ टैक्स और टेक्स्ट सेटिंग्स</div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">विड्रॉल टैक्स (%)</span><input type="number" id="taxInput" value="${config.withdrawTax || 5}" class="input-field" style="flex:1;"><button onclick="updateTax()" class="btn-sm btn-yellow">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">डिपॉजिट बोनस (%)</span><input type="number" id="depositBonusInput" value="${config.depositBonusPercent || 5}" class="input-field" style="flex:1;"><button onclick="updateDepositBonus()" class="btn-sm btn-green">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">लोगो टाइटल</span><input type="text" id="logoTitleInput" value="${escapeHtml(config.logoTitle || 'TEEN PATTI')}" class="input-field" style="flex:1;"><button onclick="updateText('logoTitle')" class="btn-sm btn-blue">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">लोगो सबटाइटल</span><input type="text" id="logoSubtitleInput" value="${escapeHtml(config.logoSubtitle || 'Play • Learn • Win')}" class="input-field" style="flex:1;"><button onclick="updateText('logoSubtitle')" class="btn-sm btn-blue">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">कार्ड 1 टाइटल</span><input type="text" id="card1TitleInput" value="${escapeHtml(config.card1Title || 'PLAY\\nLOCAL')}" class="input-field" style="flex:1;"><button onclick="updateText('card1Title')" class="btn-sm btn-blue">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">कार्ड 2 टाइटल</span><input type="text" id="card2TitleInput" value="${escapeHtml(config.card2Title || 'MINES')}" class="input-field" style="flex:1;"><button onclick="updateText('card2Title')" class="btn-sm btn-blue">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">कार्ड 3 टाइटल</span><input type="text" id="card3TitleInput" value="${escapeHtml(config.card3Title || 'DRAGON\\nVS TIGER')}" class="input-field" style="flex:1;"><button onclick="updateText('card3Title')" class="btn-sm btn-blue">सेव</button></div>
+      <div class="flex-center gap-2 mb-2"><span class="text-xs text-gray-300 w-24">कार्ड 4 टाइटल</span><input type="text" id="card4TitleInput" value="${escapeHtml(config.card4Title || 'LEARN &\\nPRACTICE')}" class="input-field" style="flex:1;"><button onclick="updateText('card4Title')" class="btn-sm btn-blue">सेव</button></div>
+    </div>
+  `;
+
+  let referralRewardsHtml = `
+    <div class="card" style="border-color:#8b5cf6;">
+      <div class="card-title text-purple-400">🎁 रेफरल रिवॉर्ड्स</div>
+      <div class="grid-2 gap-1">
+        ${[1,2,3,4,5,6,7,8,9,10].map(n => `
+          <div class="flex-center gap-1">
+            <span class="text-xs text-gray-300 w-8">${n} रेफर</span>
+            <input type="number" id="refReward_${n}" value="${config.referralRewards?.[n] || n * 100}" class="input-field" style="flex:1;padding:3px 6px;font-size:10px;">
+            <button onclick="updateReferralReward(${n})" class="btn-sm btn-purple" style="font-size:8px;">सेव</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 
   return `
     <div class="grid-3" style="margin-bottom:10px;">
@@ -827,102 +425,55 @@ function renderHome() {
       <div class="stat-box"><div class="num text-green">₹${totalDeposits.toLocaleString('en-IN')}</div><div class="label">कुल डिपॉजिट</div></div>
       <div class="stat-box"><div class="num text-red">₹${totalWithdrawals.toLocaleString('en-IN')}</div><div class="label">कुल विड्रॉल</div></div>
     </div>
-
-    <div class="card" style="border-color:#06b6d4;background:#0a1a1a;">
-      <div class="card-title text-cyan-400">🔍 यूजर रिस्टोर करें (मोबाइल नंबर से)</div>
-      <p class="text-xs text-gray-400 mb-2">हटाए गए यूजर को मोबाइल नंबर डालकर वापस लाएं</p>
-      <div class="flex-center gap-2">
-        <input type="tel" id="restoreMobileInput" placeholder="10 अंकों का मोबाइल नंबर" class="input-field" style="flex:1;padding:8px;">
-        <button onclick="restoreUserByMobile()" class="btn-sm btn-cyan" style="padding:8px 16px;font-size:12px;">🔄 रिस्टोर</button>
-      </div>
-      <div id="restoreResult" style="margin-top:4px;font-size:11px;"></div>
-    </div>
-
+    ${gameControlHtml}
+    ${livePlayersCardHtml}
     <div class="card" style="border-color:#f97316;background:#1a0a0a;">
       <div class="card-title text-orange-400">🧹 फालतू आईडी हटाएं</div>
-      <p class="text-xs text-gray-400 mb-2">उन आईडी को हटाएं जिनका कोई डेटा नहीं है</p>
       <button onclick="deleteGhostIds()" class="btn-sm btn-orange" style="width:100%;padding:6px;">🗑️ सभी फालतू आईडी हटाएं</button>
     </div>
-
+    ${textsHtml}
+    ${imagesHtml}
+    ${referralRewardsHtml}
     <div class="card" style="border-color:#ef4444;">
       <div class="card-title text-red">🔒 ब्लॉक यूजर्स (${blockedUsers})</div>
       ${blockedHtml || '<span class="text-gray text-xs">कोई ब्लॉक यूजर नहीं</span>'}
     </div>
-
     <div class="card">
       <div class="card-title text-red">📢 ब्रॉडकास्ट मैसेज</div>
       <input type="text" id="broadcastInput" value="${escapeHtml(config.broadcastMsg || '')}" placeholder="सभी यूजर्स को मैसेज..." class="input-field" style="margin-bottom:4px;">
       <button onclick="updateBroadcast()" class="btn-sm btn-red" style="width:100%;padding:6px;">मैसेज भेजें</button>
     </div>
-
     <div class="card">
-      <div class="card-title text-blue-400">⚙️ सेटिंग्स</div>
-      <div class="flex-center gap-2" style="margin-bottom:3px;">
-        <input type="text" id="telegramInput" value="${escapeHtml(config.telegramLink || '')}" placeholder="टेलीग्राम" class="input-field" style="flex:1;">
-        <button onclick="updateTelegram()" class="btn-sm btn-blue">अपडेट</button>
-      </div>
-      <div class="flex-center gap-2" style="margin-bottom:3px;">
-        <input type="text" id="whatsappInput" value="${escapeHtml(config.whatsappLink || '')}" placeholder="व्हाट्सएप" class="input-field" style="flex:1;">
-        <button onclick="updateWhatsapp()" class="btn-sm btn-green">अपडेट</button>
-      </div>
-      <div class="flex-center gap-2" style="margin-bottom:3px;">
-        <input type="number" id="fakeOnlineInput" value="${config.fakeOnline || 0}" placeholder="फेक ऑनलाइन" class="input-field" style="flex:1;">
-        <button onclick="updateFakeOnline()" class="btn-sm btn-purple">सेट</button>
-      </div>
-      <div class="flex-center gap-2" style="margin-bottom:3px;">
-        <input type="number" id="fakePlayingInput" value="${config.fakePlaying || 0}" placeholder="फेक गेमिंग" class="input-field" style="flex:1;">
-        <button onclick="updateFakePlaying()" class="btn-sm btn-purple">सेट</button>
-      </div>
-      <div class="flex-center gap-2">
-        <input type="number" id="minWithdrawInput" value="${config.minWithdraw || 100}" placeholder="मिन विड्रॉल" class="input-field" style="flex:1;">
-        <button onclick="updateMinWithdraw()" class="btn-sm btn-red">सेट</button>
-      </div>
+      <div class="card-title text-blue-400">⚙️ सेटिंग्स (सोशल लिंक)</div>
+      <div class="flex-center gap-2" style="margin-bottom:3px;"><span class="text-xs text-green w-16">व्हाट्सएप</span><input type="text" id="whatsappInput" value="${escapeHtml(config.whatsappLink || '')}" placeholder="https://wa.me/..." class="input-field" style="flex:1;"><button onclick="updateWhatsapp()" class="btn-sm btn-green">अपडेट</button></div>
+      <div class="flex-center gap-2" style="margin-bottom:3px;"><span class="text-xs text-blue w-16">टेलीग्राम</span><input type="text" id="telegramInput" value="${escapeHtml(config.telegramLink || '')}" placeholder="https://t.me/..." class="input-field" style="flex:1;"><button onclick="updateTelegram()" class="btn-sm btn-blue">अपडेट</button></div>
     </div>
-
+    <div class="card">
+      <div class="card-title text-yellow-400">⚙️ अन्य सेटिंग्स</div>
+      <div class="flex-center gap-2" style="margin-bottom:3px;"><input type="number" id="fakeOnlineInput" value="${config.fakeOnline || 0}" placeholder="फेक ऑनलाइन" class="input-field" style="flex:1;"><button onclick="updateFakeOnline()" class="btn-sm btn-purple">सेट</button></div>
+      <div class="flex-center gap-2" style="margin-bottom:3px;"><input type="number" id="fakePlayingInput" value="${config.fakePlaying || 0}" placeholder="फेक गेमिंग" class="input-field" style="flex:1;"><button onclick="updateFakePlaying()" class="btn-sm btn-purple">सेट</button></div>
+      <div class="flex-center gap-2"><input type="number" id="minWithdrawInput" value="${config.minWithdraw || 100}" placeholder="मिन विड्रॉल" class="input-field" style="flex:1;"><button onclick="updateMinWithdraw()" class="btn-sm btn-red">सेट</button></div>
+    </div>
     <div class="card">
       <div class="card-title text-green">🏦 बैंक लिस्ट</div>
-      <div class="flex-center gap-2" style="margin-bottom:4px;">
-        <input type="text" id="newBankInput" placeholder="नया बैंक" class="input-field" style="flex:1;">
-        <button onclick="addBank()" class="btn-sm btn-green">जोड़ें</button>
-      </div>
-      ${(config.bankList || []).map(b => `
-        <div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;">
-          <span>${escapeHtml(b)}</span>
-          <button onclick="deleteBank('${escapeHtml(b)}')" class="btn-sm btn-red" style="font-size:9px;">✕</button>
-        </div>
-      `).join('') || '<span class="text-gray text-xs">कोई बैंक नहीं</span>'}
+      <div class="flex-center gap-2" style="margin-bottom:4px;"><input type="text" id="newBankInput" placeholder="नया बैंक" class="input-field" style="flex:1;"><button onclick="addBank()" class="btn-sm btn-green">जोड़ें</button></div>
+      ${(config.bankList || []).map(b => `<div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;"><span>${escapeHtml(b)}</span><button onclick="deleteBank('${escapeHtml(b)}')" class="btn-sm btn-red" style="font-size:9px;">✕</button></div>`).join('') || '<span class="text-gray text-xs">कोई बैंक नहीं</span>'}
     </div>
-
     <div class="card">
       <div class="card-title text-green">💰 डिपॉजिट अमाउंट</div>
-      <div class="flex-center gap-2" style="margin-bottom:4px;">
-        <input type="number" id="newDepositAmountInput" placeholder="जैसे: 100" class="input-field" style="flex:1;">
-        <button onclick="addDepositAmount()" class="btn-sm btn-green">जोड़ें</button>
-      </div>
-      ${(config.depositAmounts || []).map(a => `
-        <div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;">
-          <span>₹${a}</span>
-          <button onclick="deleteDepositAmount(${a})" class="btn-sm btn-red" style="font-size:9px;">✕</button>
-        </div>
-      `).join('') || '<span class="text-gray text-xs">कोई अमाउंट नहीं</span>'}
+      <div class="flex-center gap-2" style="margin-bottom:4px;"><input type="number" id="newDepositAmountInput" placeholder="जैसे: 100" class="input-field" style="flex:1;"><button onclick="addDepositAmount()" class="btn-sm btn-green">जोड़ें</button></div>
+      ${(config.depositAmounts || []).map(a => `<div class="flex-between text-xs" style="border-bottom:1px solid #334155;padding:2px 0;"><span>₹${a}</span><button onclick="deleteDepositAmount(${a})" class="btn-sm btn-red" style="font-size:9px;">✕</button></div>`).join('') || '<span class="text-gray text-xs">कोई अमाउंट नहीं</span>'}
     </div>
-
     <div class="card">
       <div class="card-title text-green">🎁 प्रोमो कोड</div>
-      <div class="flex-center gap-2" style="margin-bottom:4px;">
-        <input type="text" id="promoCode" placeholder="कोड" class="input-field" style="flex:1;text-transform:uppercase;">
-        <input type="number" id="promoAmount" placeholder="राशि" class="input-field" style="width:70px;">
-        <button onclick="createPromo()" class="btn-sm btn-green">बनाएं</button>
-      </div>
+      <div class="flex-center gap-2" style="margin-bottom:4px;"><input type="text" id="promoCode" placeholder="कोड" class="input-field" style="flex:1;text-transform:uppercase;"><input type="number" id="promoAmount" placeholder="राशि" class="input-field" style="width:70px;"><button onclick="createPromo()" class="btn-sm btn-green">बनाएं</button></div>
       ${promoHtml || '<span class="text-gray text-xs">कोई प्रोमो नहीं</span>'}
     </div>
-
     <div class="card">
       <div class="card-title text-purple-400">🛠️ टेबल्स (${tableCount})</div>
       <button onclick="resetTables()" class="btn-sm btn-purple" style="width:100%;padding:5px;margin-bottom:4px;">सभी टेबल्स रीसेट करें</button>
       ${tablesHtml}
     </div>
-
     <div class="card" style="border-color:#ef4444;">
       <div class="card-title text-red">⏳ पेंडिंग विड्रॉल (${pending})</div>
       ${pendingHtml || '<span class="text-gray text-xs">कोई पेंडिंग नहीं</span>'}
@@ -930,971 +481,252 @@ function renderHome() {
   `;
 }
 
-// ============================================================
-// ====================== RENDER: USERS =======================
-// ============================================================
+function updateTax() { config.withdrawTax = parseFloat(document.getElementById('taxInput').value) || 0; saveConfigToDB(); showToast('टैक्स अपडेट हो गया!', 'success'); }
+function updateDepositBonus() { config.depositBonusPercent = parseFloat(document.getElementById('depositBonusInput').value) || 5; saveConfigToDB(); showToast('डिपॉजिट बोनस अपडेट हो गया!', 'success'); }
+function updateText(key) { config[key] = document.getElementById(key + 'Input').value; saveConfigToDB(); showToast('टेक्स्ट अपडेट हो गया!', 'success'); }
+function updateReferralReward(n) { if (!config.referralRewards) config.referralRewards = {}; config.referralRewards[n] = parseInt(document.getElementById('refReward_' + n).value) || n * 100; saveConfigToDB(); showToast('रेफरल रिवॉर्ड ' + n + ' अपडेट हो गया!', 'success'); }
+function updateCardImage(key) {
+  if(!config.cardImages) config.cardImages = { playLocal: "", createPrivate: "", joinPrivate: "", learnPractice: "" };
+  const val = document.getElementById('img_' + key).value.trim();
+  config.cardImages[key] = val;
+  saveConfigToDB();
+  showToast('🖼️ इमेज अपडेट हो गई!', 'success');
+}
+
 function renderUsers() {
   let userList = Object.values(users);
-  
-  if (searchQuery) {
-    userList = userList.filter(u =>
-      (u.id && u.id.toLowerCase().includes(searchQuery)) ||
-      (u.name && u.name.toLowerCase().includes(searchQuery)) ||
-      (u.mobile && u.mobile.includes(searchQuery))
-    );
-  }
-
-  let html = `
-    <div class="flex-center gap-2" style="margin-bottom:8px;">
-      <input type="text" id="searchInput" value="${escapeHtml(searchQuery)}" placeholder="🔍 यूजर सर्च करें..." 
-        class="search-input" style="flex:1;"
-        onfocus="startSearch()" 
-        oninput="doSearch()"
-        onkeydown="if(event.key==='Escape') exitSearch()">
-      ${searchQuery ? `<span style="cursor:pointer;font-size:11px;color:#94a3b8;" onclick="exitSearch()">✕</span>` : ''}
-    </div>
-    <div class="text-xs text-gray" style="margin-bottom:6px;">${searchQuery ? 'सर्च रिजल्ट: ' + userList.length + ' यूजर' : 'कुल ' + Object.values(users).length + ' यूजर्स'}</div>
-  `;
-
-  if (userList.length === 0) {
-    return html + '<div class="card text-gray text-center">कोई यूजर नहीं मिला</div>';
-  }
+  if (searchQuery) { userList = userList.filter(u => (u.id && u.id.toLowerCase().includes(searchQuery)) || (u.name && u.name.toLowerCase().includes(searchQuery)) || (u.mobile && u.mobile.includes(searchQuery))); }
+  let html = `<div class="flex-center gap-2" style="margin-bottom:8px;"><input type="text" id="searchInput" value="${escapeHtml(searchQuery)}" placeholder="🔍 यूजर सर्च करें..." class="search-input" style="flex:1;" onfocus="startSearch()" oninput="doSearch()" onkeydown="if(event.key==='Escape') exitSearch()">${searchQuery ? `<span style="cursor:pointer;font-size:11px;color:#94a3b8;" onclick="exitSearch()">✕</span>` : ''}</div><div class="text-xs text-gray" style="margin-bottom:6px;">${searchQuery ? 'सर्च रिजल्ट: ' + userList.length + ' यूजर' : 'कुल ' + Object.values(users).length + ' यूजर्स'}</div>`;
+  if (userList.length === 0) return html + '<div class="card text-gray text-center">कोई यूजर नहीं मिला</div>';
 
   userList.forEach(u => {
-    const balance = u.balance || 0;
-    const wdBalance = u.withdrawableBalance || 0;
-    const bonusBalance = u.bonusBalance || 0;
-    const hasDepositedAfter250 = u.hasDepositedAfter250 || false;
-    const deviceId = u.deviceId || 'N/A';
-    
+    const balance = u.balance || 0; const wdBalance = u.withdrawableBalance || 0; const hasDepositedAfter250 = u.hasDepositedAfter250 || false; const deviceId = u.deviceId || 'N/A';
+    const currentGame = u.currentGame ? ({ teenPatti: '🃏 Teen Patti', mines: '💣 Mines', dragonTiger: '🐉 Dragon vs Tiger' }[u.currentGame] || u.currentGame) : null;
+    let depHistHtml = ''; const depHist = u.depositHistory || [];
+    if (depHist.length === 0) depHistHtml = '<span class="text-gray text-xs">कोई डिपॉजिट नहीं</span>';
+    else for (let i = depHist.length - 1; i >= 0; i--) { const d = depHist[i]; depHistHtml += `<div class="history-item"><span class="text-gray">${escapeHtml(d.time || '')} - ${escapeHtml(d.desc || 'डिपॉजिट')}</span><div class="flex-center gap-1"><span class="text-green">+₹${(d.amount || 0) + (d.bonus || 0)}</span><button onclick="deleteDepositItem('${u.id}', ${i})" class="btn-xs btn-red">🗑️ हटाएं</button></div></div>`; }
+    let wdHistHtml = ''; const wdHist = u.withdrawHistory || [];
+    if (wdHist.length === 0) wdHistHtml = '<span class="text-gray text-xs">कोई विड्रॉल नहीं</span>';
+    else for (let i = wdHist.length - 1; i >= 0; i--) { const w = wdHist[i]; wdHistHtml += `<div class="history-item"><span class="text-gray">${escapeHtml(w.time || '')} - ${escapeHtml(w.status || 'Pending')}</span><div class="flex-center gap-1"><span class="text-red">-₹${w.amount || 0}</span><button onclick="deleteWithdrawItem('${u.id}', ${i})" class="btn-xs btn-red">🗑️ हटाएं</button></div></div>`; }
+
     html += `
       <div class="card" id="user_card_${u.id}">
         <div class="flex-between">
+          <div class="flex-center"><span class="text-sm font-bold text-yellow-400">${escapeHtml(u.name || 'Unknown')}</span>${u.isBlocked ? '<span class="badge badge-blocked">ब्लॉक</span>' : '<span class="badge badge-active">सक्रिय</span>'}${u.isPlaying ? '<span class="badge" style="background:#22c55e;color:white;animation:pulse 1.5s infinite;">🎮 खेल रहा</span>' : ''}</div>
           <div class="flex-center">
-            <span class="text-sm font-bold text-yellow-400">${escapeHtml(u.name || 'Unknown')}</span>
-            ${u.isBlocked ? '<span class="badge badge-blocked">ब्लॉक</span>' : '<span class="badge badge-active">सक्रिय</span>'}
-          </div>
-          <div class="flex-center">
-            <div class="text-right" style="margin-right:8px;">
-              <div class="text-lg font-bold text-green" id="balance_display_${u.id}">₹${balance.toLocaleString('en-IN')}</div>
-              <div class="text-[9px] text-yellow">विड्रॉल: ₹${Math.min(wdBalance, balance).toLocaleString('en-IN')}</div>
-            </div>
+            <div class="text-right" style="margin-right:8px;"><div class="text-lg font-bold text-green" id="balance_display_${u.id}">₹${balance.toLocaleString('en-IN')}</div><div class="text-[9px] text-yellow">विड्रॉल: ₹${Math.min(wdBalance, balance).toLocaleString('en-IN')}</div></div>
             <div class="menu-container">
               <button class="menu-dots" onclick="toggleMenu('${u.id}', event)">≡</button>
               <div class="menu-dropdown" id="menu_${u.id}">
-                <div class="menu-item" style="color:#94a3b8;font-size:10px;border-bottom:1px solid #334155;">
-                  👤 ${escapeHtml(u.name || 'N/A')}
-                </div>
-                <div class="menu-item" onclick="viewDepositHistory('${u.id}')">
-                  <span class="icon">⬇️</span> डिपॉजिट हिस्ट्री देखें
-                </div>
-                <div class="menu-item" onclick="viewWithdrawHistory('${u.id}')">
-                  <span class="icon">⬆️</span> विड्रॉल हिस्ट्री देखें
-                </div>
-                <div class="menu-item" onclick="viewGameHistory('${u.id}')">
-                  <span class="icon">🎮</span> गेम हिस्ट्री देखें
-                </div>
-                <div class="menu-item" onclick="viewReferrals('${u.id}')">
-                  <span class="icon">🎁</span> रेफरल्स देखें
-                </div>
-                <div class="menu-item" onclick="viewUserReport('${u.id}')" style="color:#8b5cf6;">
-                  <span class="icon">📊</span> पूरी रिपोर्ट देखें
-                </div>
-                <div class="menu-item" onclick="toggleBlock('${u.id}')" style="color:${u.isBlocked ? '#22c55e' : '#f97316'};">
-                  <span class="icon">${u.isBlocked ? '🔓' : '🔒'}</span> ${u.isBlocked ? 'अनब्लॉक' : 'ब्लॉक'}
-                </div>
-                <div class="menu-item" onclick="deleteUserToTrash('${u.id}')" style="color:#ef4444;">
-                  <span class="icon">🗑️</span> डिब्बे में भेजें
-                </div>
-                <div class="menu-item" onclick="resetDepositStatus('${u.id}')" style="color:#eab308;">
-                  <span class="icon">🔄</span> ₹250+ Deposit रीसेट
-                </div>
-                <div class="menu-item" onclick="refreshUserData('${u.id}')" style="color:#3b82f6;">
-                  <span class="icon">🔄</span> डेटा रीफ्रेश करें
-                </div>
+                <div class="menu-item" style="color:#94a3b8;font-size:10px;border-bottom:1px solid #334155;">👤 ${escapeHtml(u.name || 'N/A')}</div>
+                <div class="menu-item" onclick="viewDepositHistory('${u.id}')"><span class="icon">⬇️</span> डिपॉजिट हिस्ट्री देखें</div>
+                <div class="menu-item" onclick="viewWithdrawHistory('${u.id}')"><span class="icon">⬆️</span> विड्रॉल हिस्ट्री देखें</div>
+                <div class="menu-item" onclick="viewGameHistory('${u.id}')"><span class="icon">🎮</span> गेम हिस्ट्री देखें</div>
+                <div class="menu-item" onclick="viewReferrals('${u.id}')"><span class="icon">🎁</span> रेफरल्स देखें</div>
+                <div class="menu-item" onclick="viewUserReport('${u.id}')" style="color:#8b5cf6;"><span class="icon">📊</span> पूरी रिपोर्ट देखें</div>
+                <div class="menu-item" onclick="toggleBlock('${u.id}')" style="color:${u.isBlocked ? '#22c55e' : '#f97316'};"><span class="icon">${u.isBlocked ? '🔓' : '🔒'}</span> ${u.isBlocked ? 'अनब्लॉक' : 'ब्लॉक'}</div>
+                <div class="menu-item" onclick="deleteUserToTrash('${u.id}')" style="color:#ef4444;"><span class="icon">🗑️</span> डिब्बे में भेजें</div>
+                <div class="menu-item" onclick="resetDepositStatus('${u.id}')" style="color:#eab308;"><span class="icon">🔄</span> ₹250+ Deposit रीसेट</div>
+                <div class="menu-item" onclick="refreshUserData('${u.id}')" style="color:#3b82f6;"><span class="icon">🔄</span> डेटा रीफ्रेश करें</div>
               </div>
               <div class="menu-overlay" id="overlay_${u.id}" onclick="closeAllMenus()"></div>
             </div>
           </div>
         </div>
-        
-        <div class="flex-between text-xs text-gray">
-          <span>${escapeHtml(u.id || 'N/A')} | ${escapeHtml(u.mobile || 'N/A')}</span>
-          <span class="${hasDepositedAfter250 ? 'text-green' : 'text-yellow'}">${hasDepositedAfter250 ? '✅ ₹250+ Done' : '⚠️ ₹250+ Pending'}</span>
-        </div>
+        <div class="flex-between text-xs text-gray"><span>${escapeHtml(u.id || 'N/A')} | ${escapeHtml(u.mobile || 'N/A')}</span><span class="${hasDepositedAfter250 ? 'text-green' : 'text-yellow'}">${hasDepositedAfter250 ? '✅ ₹250+ Done' : '⚠️ ₹250+ Pending'}</span></div>
+        ${currentGame ? `<div class="text-[10px] mt-1" style="color:#22c55e;font-weight:bold;">🎮 अभी खेल रहा: ${currentGame}</div>` : ''}
         <div class="text-[9px] text-gray">📱 ${escapeHtml(deviceId)}</div>
+        <div class="text-xs" style="padding:3px;background:#0f172a;border-radius:4px;margin-top:3px;"><span class="text-gray">रेफरल कोड: </span><span class="text-yellow font-mono">${escapeHtml(u.referralCode || 'N/A')}</span><span class="text-gray ml-2">कमाई: </span><span class="text-green">₹${u.referralEarnings || 0}</span><span class="text-gray ml-2">रेफरल: </span><span class="text-white">${u.referralCount || 0}</span></div>
         
-        <div class="text-xs" style="padding:3px;background:#0f172a;border-radius:4px;margin-top:3px;">
-          <span class="text-gray">रेफरल कोड: </span><span class="text-yellow font-mono">${escapeHtml(u.referralCode || 'N/A')}</span>
-          <span class="text-gray ml-2">कमाई: </span><span class="text-green">₹${u.referralEarnings || 0}</span>
-          <span class="text-gray ml-2">रेफरल: </span><span class="text-white">${u.referralCount || 0}</span>
-        </div>
+        <div id="depositHist_${u.id}" class="user-collapse hidden"><div class="card-title text-green">📥 डिपॉजिट हिस्ट्री</div>${depHistHtml}</div>
+        <div id="withdrawHist_${u.id}" class="user-collapse hidden"><div class="card-title text-red">📤 विड्रॉल हिस्ट्री</div>${wdHistHtml}</div>
+        <div id="gameHist_${u.id}" class="user-collapse hidden"><div class="card-title text-purple-400">🎮 गेम हिस्ट्री</div>${(u.gameHistory || []).slice().reverse().map((g, i) => `<div class="history-item"><span class="text-gray">${escapeHtml(g.time || '')} (${g.type || 'game'})</span><span class="${g.result === 'Loss' ? 'text-red' : 'text-green'}">${escapeHtml(g.result)} ₹${g.amount}</span></div>`).join('') || '<span class="text-gray text-xs">कोई गेम नहीं</span>'}</div>
+        <div id="refList_${u.id}" class="user-collapse hidden"><div class="card-title text-purple-400">🎁 रेफरल्स</div>${(Object.values(users).filter(r => r.referredBy === u.referralCode).map(r => `<div class="flex-between text-xs" style="border-bottom:1px solid #1e293b;padding:2px 0;"><span>${escapeHtml(r.name)} (${escapeHtml(r.mobile)})</span><span class="badge ${(r.depositHistory || []).reduce((s,d) => s + (parseInt(d.amount)||0), 0) >= 100 ? 'badge-approved' : 'badge-pending'}">${(r.depositHistory || []).reduce((s,d) => s + (parseInt(d.amount)||0), 0) >= 100 ? '✅ डिपॉजिट' : '⏳ बाकी'}</span></div>`).join('')) || '<span class="text-gray text-xs">कोई रेफरल नहीं</span>'}</div>
+        <div id="report_${u.id}" class="user-collapse hidden"><div class="card-title text-purple-400">📊 यूजर रिपोर्ट</div>${renderUserReport(u)}</div>
         
-        <div id="depositHist_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-green">📥 डिपॉजिट हिस्ट्री</div>
-          ${(u.depositHistory || []).slice().reverse().map((d, i) => `
-            <div class="history-item ${d._deleted ? 'deleted-item' : ''}">
-              <span class="text-gray">${escapeHtml(d.time || '')}</span>
-              <span class="${d._deleted ? 'text-gray' : 'text-green'}">${d._deleted ? '🗑️ ' : '+₹'}${d.amount || 0}</span>
-              ${d._deleted ? '<span class="badge badge-deleted">हटाई गई</span>' : '<span class="badge badge-approved">सक्रिय</span>'}
-            </div>
-          `).join('') || '<span class="text-gray text-xs">कोई डिपॉजिट नहीं</span>'}
-        </div>
-        
-        <div id="withdrawHist_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-red">📤 विड्रॉल हिस्ट्री</div>
-          ${(u.withdrawHistory || []).slice().reverse().map((w, i) => `
-            <div class="history-item ${w._deleted ? 'deleted-item' : ''}">
-              <span class="text-gray">${escapeHtml(w.time || '')}</span>
-              <span class="${w._deleted ? 'text-gray' : 'text-red'}">${w._deleted ? '🗑️ ' : '-₹'}${w.amount || 0}</span>
-              ${w._deleted ? '<span class="badge badge-deleted">हटाई गई</span>' : `<span class="badge badge-${w.status?.toLowerCase() || 'pending'}">${escapeHtml(w.status || 'Pending')}</span>`}
-            </div>
-          `).join('') || '<span class="text-gray text-xs">कोई विड्रॉल नहीं</span>'}
-        </div>
-        
-        <div id="gameHist_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-purple-400">🎮 गेम हिस्ट्री</div>
-          ${(u.gameHistory || []).slice().reverse().map((g, i) => `
-            <div class="history-item ${g._deleted ? 'deleted-item' : ''}">
-              <span class="text-gray">${escapeHtml(g.time || '')}</span>
-              <span class="${g._deleted ? 'text-gray' : (g.result === 'Loss' ? 'text-red' : 'text-green')}">${g._deleted ? '🗑️ ' : escapeHtml(g.result)} ${!g._deleted ? '₹' + g.amount : ''}</span>
-              ${g._deleted ? '<span class="badge badge-deleted">हटाई गई</span>' : '<span class="badge badge-approved">सक्रिय</span>'}
-            </div>
-          `).join('') || '<span class="text-gray text-xs">कोई गेम नहीं</span>'}
-        </div>
-        
-        <div id="refList_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-purple-400">🎁 रेफरल्स</div>
-          ${(Object.values(users).filter(r => r.referredBy === u.referralCode).map(r => `
-            <div class="flex-between text-xs" style="border-bottom:1px solid #1e293b;padding:2px 0;">
-              <span>${escapeHtml(r.name)} (${escapeHtml(r.mobile)})</span>
-              <span class="badge ${(r.depositHistory || []).reduce((s,d) => s + (parseInt(d.amount)||0), 0) >= 100 ? 'badge-approved' : 'badge-pending'}">
-                ${(r.depositHistory || []).reduce((s,d) => s + (parseInt(d.amount)||0), 0) >= 100 ? '✅ डिपॉजिट' : '⏳ बाकी'}
-              </span>
-            </div>
-          `).join('')) || '<span class="text-gray text-xs">कोई रेफरल नहीं</span>'}
-        </div>
-        
-        <div id="report_${u.id}" class="user-collapse hidden">
-          <div class="card-title text-purple-400">📊 यूजर रिपोर्ट</div>
-          ${renderUserReport(u)}
-        </div>
-        
-        <!-- Quick Admin Controls -->
         <div style="margin-top:4px;">
           <div class="flex-center gap-1" style="margin-bottom:3px;">
-            <input type="number" id="amt_${u.id}" placeholder="राशि" class="input-field" style="flex:1;padding:3px 6px;font-size:10px;">
-            <button onclick="adjustBalance('${u.id}', 'add')" class="btn-sm btn-green" style="font-size:9px;">+</button>
-            <button onclick="adjustBalance('${u.id}', 'sub')" class="btn-sm btn-red" style="font-size:9px;">-</button>
+            <input type="number" id="amt_${u.id}" placeholder="राशि डालें (₹100+ होने पर गेम चलेगा)" class="input-field" style="flex:1;padding:3px 6px;font-size:10px;">
+            <button onclick="adjustBalance('${u.id}', 'add')" class="btn-sm btn-green" style="font-size:9px;">+ बैलेंस</button>
+            <button onclick="adjustBalance('${u.id}', 'sub')" class="btn-sm btn-red" style="font-size:9px;">- बैलेंस</button>
           </div>
-          <div class="flex-center gap-1">
-            <input type="text" id="pass_${u.id}" value="${escapeHtml(u.password || '')}" placeholder="पासवर्ड" class="input-field" style="flex:1;padding:3px 6px;font-size:10px;">
-            <button onclick="changePass('${u.id}')" class="btn-sm btn-blue" style="font-size:9px;">सेव</button>
+          <div class="flex-center gap-1" style="margin-bottom:3px;">
+            <input type="number" id="wd_amt_${u.id}" placeholder="विड्रॉल बैलेंस काटें" class="input-field" style="flex:1;padding:3px 6px;font-size:10px;">
+            <button onclick="deductWithdrawableBalance('${u.id}')" class="btn-sm btn-orange" style="font-size:9px; width: 100%;">✂️ विड्रॉल बैलेंस काटें</button>
           </div>
-          <div class="flex-center gap-1" style="margin-top:2px;">
-            <input type="text" id="bankName_${u.id}" value="${escapeHtml(u.bankDetails?.bankName || '')}" placeholder="बैंक" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;">
-            <input type="text" id="accName_${u.id}" value="${escapeHtml(u.bankDetails?.accName || '')}" placeholder="होल्डर" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;">
-          </div>
-          <div class="flex-center gap-1" style="margin-top:2px;">
-            <input type="text" id="accNum_${u.id}" value="${escapeHtml(u.bankDetails?.accNumber || '')}" placeholder="अकाउंट" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;">
-            <input type="text" id="ifsc_${u.id}" value="${escapeHtml(u.bankDetails?.ifsc || '')}" placeholder="IFSC" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;">
-            <button onclick="editBank('${u.id}')" class="btn-sm btn-blue" style="font-size:9px;">अपडेट</button>
-          </div>
+          <div class="flex-center gap-1"><input type="text" id="pass_${u.id}" value="${escapeHtml(u.password || '')}" placeholder="पासवर्ड" class="input-field" style="flex:1;padding:3px 6px;font-size:10px;"><button onclick="changePass('${u.id}')" class="btn-sm btn-blue" style="font-size:9px;">सेव</button></div>
+          <div class="flex-center gap-1" style="margin-top:2px;"><input type="text" id="bankName_${u.id}" value="${escapeHtml(u.bankDetails?.bankName || '')}" placeholder="बैंक" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;"><input type="text" id="accName_${u.id}" value="${escapeHtml(u.bankDetails?.accName || '')}" placeholder="होल्डर" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;"></div>
+          <div class="flex-center gap-1" style="margin-top:2px;"><input type="text" id="accNum_${u.id}" value="${escapeHtml(u.bankDetails?.accNumber || '')}" placeholder="अकाउंट" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;"><input type="text" id="ifsc_${u.id}" value="${escapeHtml(u.bankDetails?.ifsc || '')}" placeholder="IFSC" class="input-field" style="flex:1;padding:3px 6px;font-size:9px;"><button onclick="editBank('${u.id}')" class="btn-sm btn-blue" style="font-size:9px;">अपडेट</button></div>
         </div>
       </div>
     `;
   });
-
   return html;
 }
 
-// ============================================================
-// ====================== USER REPORT ==========================
-// ============================================================
 function renderUserReport(u) {
-  const totalDeposit = (u.depositHistory || []).reduce((s, d) => s + (parseInt(d.amount)||0), 0);
-  const totalWithdraw = (u.withdrawHistory || []).filter(w => w.status === 'Approved' && !w._deleted).reduce((s, w) => s + (parseInt(w.amount)||0), 0);
+  const totalDeposit = (u.depositHistory || []).reduce((s, d) => s + (parseInt(d.amount)||0) + (parseInt(d.bonus)||0), 0);
+  const totalWithdraw = (u.withdrawHistory || []).filter(w => w.status === 'Approved').reduce((s, w) => s + (parseInt(w.amount)||0), 0);
   const totalGames = (u.gameHistory || []).length;
   const wins = (u.gameHistory || []).filter(g => g.result === 'Win').length;
   const losses = (u.gameHistory || []).filter(g => g.result === 'Loss').length;
-  const pendingWithdraw = (u.withdrawHistory || []).filter(w => w.status === 'Pending' && !w._deleted).length;
+  const pendingWithdraw = (u.withdrawHistory || []).filter(w => w.status === 'Pending').length;
   const referredCount = Object.values(users).filter(r => r.referredBy === u.referralCode).length;
-
-  return `
-    <div class="report-grid">
-      <div class="report-item"><span>कुल बैलेंस</span><span class="text-green">₹${(u.balance || 0).toLocaleString()}</span></div>
-      <div class="report-item"><span>विड्रॉल बैलेंस</span><span class="text-yellow">₹${Math.min((u.withdrawableBalance||0), (u.balance||0)).toLocaleString()}</span></div>
-      <div class="report-item"><span>बोनस बैलेंस</span><span class="text-purple-400">₹${(u.bonusBalance||0).toLocaleString()}</span></div>
-      <div class="report-item"><span>कुल डिपॉजिट</span><span class="text-green">₹${totalDeposit.toLocaleString()}</span></div>
-      <div class="report-item"><span>कुल विड्रॉल</span><span class="text-red">₹${totalWithdraw.toLocaleString()}</span></div>
-      <div class="report-item"><span>कुल गेम्स</span><span class="text-white">${totalGames}</span></div>
-      <div class="report-item"><span>जीत/हार</span><span class="text-white">${wins}/${losses}</span></div>
-      <div class="report-item"><span>पेंडिंग विड्रॉल</span><span class="text-yellow">${pendingWithdraw}</span></div>
-      <div class="report-item"><span>रेफरल कमाई</span><span class="text-green">₹${(u.referralEarnings||0).toLocaleString()}</span></div>
-      <div class="report-item"><span>कुल रेफरल्स</span><span class="text-white">${referredCount}</span></div>
-      <div class="report-item"><span>डिवाइस ID</span><span class="text-xs text-gray">${escapeHtml(u.deviceId || 'N/A')}</span></div>
-    </div>
-  `;
+  return `<div class="report-grid">
+    <div class="report-item"><span>कुल बैलेंस</span><span class="text-green">₹${(u.balance || 0).toLocaleString()}</span></div>
+    <div class="report-item"><span>विड्रॉल बैलेंस</span><span class="text-yellow">₹${Math.min((u.withdrawableBalance||0), (u.balance||0)).toLocaleString()}</span></div>
+    <div class="report-item"><span>बोनस बैलेंस</span><span class="text-purple-400">₹${(u.bonusBalance||0).toLocaleString()}</span></div>
+    <div class="report-item"><span>कुल डिपॉजिट</span><span class="text-green">₹${totalDeposit.toLocaleString()}</span></div>
+    <div class="report-item"><span>कुल विड्रॉल</span><span class="text-red">₹${totalWithdraw.toLocaleString()}</span></div>
+    <div class="report-item"><span>कुल गेम्स</span><span class="text-white">${totalGames}</span></div>
+    <div class="report-item"><span>जीत/हार</span><span class="text-white">${wins}/${losses}</span></div>
+    <div class="report-item"><span>पेंडिंग विड्रॉल</span><span class="text-yellow">${pendingWithdraw}</span></div>
+    <div class="report-item"><span>रेफरल कमाई</span><span class="text-green">₹${(u.referralEarnings||0).toLocaleString()}</span></div>
+    <div class="report-item"><span>कुल रेफरल्स</span><span class="text-white">${referredCount}</span></div>
+    <div class="report-item"><span>D&T गेम्स</span><span class="text-white">${u.dragonTigerGames || 0}</span></div>
+    <div class="report-item"><span>D&T जीत/हार</span><span class="text-white">${u.dragonTigerWins || 0}/${u.dragonTigerLosses || 0}</span></div>
+    <div class="report-item"><span>डिवाइस ID</span><span class="text-xs text-gray">${escapeHtml(u.deviceId || 'N/A')}</span></div>
+  </div>`;
 }
 
-// ============================================================
-// ====================== MENU VIEW FUNCTIONS ==================
-// ============================================================
-function viewDepositHistory(userId) {
-  closeAllMenus();
-  const el = document.getElementById('depositHist_' + userId);
-  if (el) {
-    document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'depositHist_' + userId) e.classList.add('hidden');
-    });
-    el.classList.toggle('hidden');
-    showToast('📥 डिपॉजिट हिस्ट्री देख रहे हैं', 'info');
-  }
-}
+function viewDepositHistory(userId) { closeAllMenus(); const el = document.getElementById('depositHist_' + userId); if (el) { document.querySelectorAll('.user-collapse').forEach(e => { if (e.id !== 'depositHist_' + userId) e.classList.add('hidden'); }); el.classList.toggle('hidden'); showToast('📥 डिपॉजिट हिस्ट्री देख रहे हैं', 'info'); } }
+function viewWithdrawHistory(userId) { closeAllMenus(); const el = document.getElementById('withdrawHist_' + userId); if (el) { document.querySelectorAll('.user-collapse').forEach(e => { if (e.id !== 'withdrawHist_' + userId) e.classList.add('hidden'); }); el.classList.toggle('hidden'); showToast('📤 विड्रॉल हिस्ट्री देख रहे हैं', 'info'); } }
+function viewGameHistory(userId) { closeAllMenus(); const el = document.getElementById('gameHist_' + userId); if (el) { document.querySelectorAll('.user-collapse').forEach(e => { if (e.id !== 'gameHist_' + userId) e.classList.add('hidden'); }); el.classList.toggle('hidden'); showToast('🎮 गेम हिस्ट्री देख रहे हैं', 'info'); } }
+function viewReferrals(userId) { closeAllMenus(); const el = document.getElementById('refList_' + userId); if (el) { document.querySelectorAll('.user-collapse').forEach(e => { if (e.id !== 'refList_' + userId) e.classList.add('hidden'); }); el.classList.toggle('hidden'); showToast('🎁 रेफरल्स देख रहे हैं', 'info'); } }
+function viewUserReport(userId) { closeAllMenus(); const el = document.getElementById('report_' + userId); if (el) { document.querySelectorAll('.user-collapse').forEach(e => { if (e.id !== 'report_' + userId) e.classList.add('hidden'); }); el.classList.toggle('hidden'); showToast('📊 यूजर रिपोर्ट देख रहे हैं', 'info'); } }
+function resetDepositStatus(userId) { closeAllMenus(); if (!confirm('क्या आप इस यूजर का ₹250+ Deposit Status रीसेट करना चाहते हैं?')) return; saveUserToDB(userId, { hasDepositedAfter250: false }); addAdminLog('reset_deposit_status', userId, '₹250+ Deposit status reset'); showToast('🔄 ₹250+ Deposit Status रीसेट हो गया!', 'success'); }
+function refreshUserData(userId) { closeAllMenus(); if (window.db) { window.db.ref('tp_users/' + userId).once('value').then(snap => { if (snap.val()) { users[userId] = snap.val(); showToast('🔄 यूजर डेटा रीफ्रेश हो गया!', 'success'); renderContent(true); } }); } }
 
-function viewWithdrawHistory(userId) {
-  closeAllMenus();
-  const el = document.getElementById('withdrawHist_' + userId);
-  if (el) {
-    document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'withdrawHist_' + userId) e.classList.add('hidden');
-    });
-    el.classList.toggle('hidden');
-    showToast('📤 विड्रॉल हिस्ट्री देख रहे हैं', 'info');
-  }
-}
-
-function viewGameHistory(userId) {
-  closeAllMenus();
-  const el = document.getElementById('gameHist_' + userId);
-  if (el) {
-    document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'gameHist_' + userId) e.classList.add('hidden');
-    });
-    el.classList.toggle('hidden');
-    showToast('🎮 गेम हिस्ट्री देख रहे हैं', 'info');
-  }
-}
-
-function viewReferrals(userId) {
-  closeAllMenus();
-  const el = document.getElementById('refList_' + userId);
-  if (el) {
-    document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'refList_' + userId) e.classList.add('hidden');
-    });
-    el.classList.toggle('hidden');
-    showToast('🎁 रेफरल्स देख रहे हैं', 'info');
-  }
-}
-
-function viewUserReport(userId) {
-  closeAllMenus();
-  const el = document.getElementById('report_' + userId);
-  if (el) {
-    document.querySelectorAll('.user-collapse').forEach(e => {
-      if (e.id !== 'report_' + userId) e.classList.add('hidden');
-    });
-    el.classList.toggle('hidden');
-    showToast('📊 यूजर रिपोर्ट देख रहे हैं', 'info');
-  }
-}
-
-function resetDepositStatus(userId) {
-  closeAllMenus();
-  if (!confirm('क्या आप इस यूजर का ₹250+ Deposit Status रीसेट करना चाहते हैं?')) return;
-  saveUserToDB(userId, { hasDepositedAfter250: false });
-  addAdminLog('reset_deposit_status', userId, '₹250+ Deposit status reset');
-  showToast('🔄 ₹250+ Deposit Status रीसेट हो गया!', 'success');
-}
-
-function refreshUserData(userId) {
-  closeAllMenus();
-  if (window.db) {
-    window.db.ref('tp_users/' + userId).once('value').then(snap => {
-      if (snap.val()) {
-        users[userId] = snap.val();
-        showToast('🔄 यूजर डेटा रीफ्रेश हो गया!', 'success');
-        renderContent(true);
-      }
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
-  }
-}
-
-// ============================================================
-// ====================== RENDER: DEPOSITS =====================
-// ============================================================
 function renderDeposits() {
   let allDeposits = [];
-  Object.values(users).forEach(u => {
-    (u.depositHistory || []).forEach((d, idx) => {
-      allDeposits.push({ ...d, user: u.name, mobile: u.mobile, userId: u.id, index: idx });
-    });
-  });
+  Object.values(users).forEach(u => { (u.depositHistory || []).forEach((d, idx) => { allDeposits.push({ ...d, user: u.name, mobile: u.mobile, userId: u.id, index: idx }); }); });
   allDeposits.sort((a,b) => (b.ts || 0) - (a.ts || 0));
-
-  if (allDeposits.length === 0) {
-    return '<div class="card text-gray text-center">कोई डिपॉजिट नहीं मिला</div>';
-  }
-
-  return allDeposits.slice(0, 50).map(d => {
-    const isDeleted = d._deleted === true;
-    return `
-      <div class="card ${isDeleted ? 'opacity-50' : ''}">
-        <div class="flex-between">
-          <div>
-            <div class="text-sm font-bold text-yellow-400">${escapeHtml(d.user || 'N/A')}</div>
-            <div class="text-xs text-gray">${escapeHtml(d.mobile || 'N/A')}</div>
-            <div class="text-xs text-gray">${escapeHtml(d.time || '')} ${d.utr ? '| ID: ' + escapeHtml(d.utr) : ''}</div>
-            ${isDeleted ? '<span class="badge badge-deleted">🗑️ हटाई गई</span>' : '<span class="badge badge-approved">✅ सक्रिय</span>'}
-          </div>
-          <div class="text-right">
-            <div class="text-lg font-bold ${isDeleted ? 'text-gray' : 'text-green'}">${isDeleted ? '🗑️' : '+'}₹${d.amount || 0}</div>
-            <div class="flex-center gap-1" style="margin-top:3px;">
-              ${!isDeleted ? `
-                <button onclick="deleteDepositItem('${d.userId}', ${d.index})" class="btn-sm btn-red" style="font-size:9px;">🗑️ हटाएं</button>
-              ` : `
-                <button onclick="restoreDepositItem('${d.userId}', ${d.index})" class="btn-sm btn-green" style="font-size:9px;">↩️ वापस लाएं</button>
-              `}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  if (allDeposits.length === 0) return '<div class="card text-gray text-center">कोई डिपॉजिट नहीं मिला</div>';
+  return allDeposits.slice(0, 50).map(d => `<div class="card"><div class="flex-between"><div><div class="text-sm font-bold text-yellow-400">${escapeHtml(d.user || 'N/A')}</div><div class="text-xs text-gray">${escapeHtml(d.mobile || 'N/A')}</div><div class="text-xs text-gray">${escapeHtml(d.time || '')} ${d.utr ? '| ID: ' + escapeHtml(d.utr) : ''}</div><div class="text-xs text-green">${d.bonus ? 'बोनस: ₹' + d.bonus : ''}</div></div><div class="text-right"><div class="text-lg font-bold text-green">+₹${(d.amount || 0) + (d.bonus || 0)}</div><div class="flex-center gap-1" style="margin-top:3px;"><button onclick="deleteDepositItem('${d.userId}', ${d.index})" class="btn-sm btn-red" style="font-size:9px;">🗑️ हटाएं</button></div></div></div></div>`).join('');
 }
 
-// ============================================================
-// ====================== RENDER: WITHDRAWALS ==================
-// ============================================================
 function renderWithdrawals() {
   let allWithdrawals = [];
-  Object.values(users).forEach(u => {
-    (u.withdrawHistory || []).forEach((w, idx) => {
-      allWithdrawals.push({ ...w, user: u.name, mobile: u.mobile, userId: u.id, index: idx, bankDetails: u.bankDetails });
-    });
-  });
+  Object.values(users).forEach(u => { (u.withdrawHistory || []).forEach((w, idx) => { allWithdrawals.push({ ...w, user: u.name, mobile: u.mobile, userId: u.id, index: idx, bankDetails: u.bankDetails }); }); });
   allWithdrawals.sort((a,b) => (b.ts || 0) - (a.ts || 0));
-
-  if (allWithdrawals.length === 0) {
-    return '<div class="card text-gray text-center">कोई विड्रॉल नहीं मिला</div>';
-  }
-
+  if (allWithdrawals.length === 0) return '<div class="card text-gray text-center">कोई विड्रॉल नहीं मिला</div>';
   return allWithdrawals.slice(0, 50).map(w => {
-    const isDeleted = w._deleted === true;
-    const bank = w.bankDetails || {};
-    const statusClass = w.status === 'Approved' ? 'badge-approved' : w.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-    
-    return `
-      <div class="card ${isDeleted ? 'opacity-50' : ''}">
-        <div class="flex-between">
-          <div>
-            <div class="text-sm font-bold text-yellow-400">${escapeHtml(w.user || 'N/A')}</div>
-            <div class="text-xs text-gray">📱 ${escapeHtml(w.mobile || 'N/A')}</div>
-            <div class="text-xs text-gray">₹${w.amount || 0} | ${escapeHtml(w.time || '')}</div>
-            <div class="flex-center gap-1" style="margin-top:2px;">
-              ${isDeleted ? '<span class="badge badge-deleted">🗑️ हटाई गई</span>' : `<span class="badge ${statusClass}">${escapeHtml(w.status || 'Pending')}</span>`}
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-lg font-bold ${isDeleted ? 'text-gray' : 'text-red'}">${isDeleted ? '🗑️' : '-'}₹${w.amount || 0}</div>
-            <div class="flex-center gap-1" style="margin-top:3px;">
-              ${!isDeleted ? `
-                <button onclick="deleteWithdrawItem('${w.userId}', ${w.index})" class="btn-sm btn-red" style="font-size:9px;">🗑️ हटाएं</button>
-                ${w.status === 'Pending' ? `
-                  <button onclick="approveWithdraw('${w.userId}', ${w.txId})" class="btn-sm btn-green" style="font-size:9px;">✅</button>
-                  <button onclick="rejectWithdraw('${w.userId}', ${w.txId})" class="btn-sm btn-red" style="font-size:9px;">❌</button>
-                ` : ''}
-              ` : `
-                <button onclick="restoreWithdrawItem('${w.userId}', ${w.index})" class="btn-sm btn-green" style="font-size:9px;">↩️ वापस लाएं</button>
-              `}
-            </div>
-          </div>
-        </div>
-        ${!isDeleted ? `
-          <div class="withdraw-detail" style="margin-top:4px;padding-top:4px;border-top:1px solid #334155;">
-            <div>🏦 बैंक: <span>${escapeHtml(bank.bankName || 'N/A')}</span></div>
-            <div>👤 होल्डर: <span>${escapeHtml(bank.accName || 'N/A')}</span></div>
-            <div>🔢 अकाउंट: <span>${escapeHtml(bank.accNumber || 'N/A')}</span></div>
-            <div>🏷️ IFSC: <span>${escapeHtml(bank.ifsc || 'N/A')}</span></div>
-          </div>
-        ` : ''}
-      </div>
-    `;
+    const bank = w.bankDetails || {}; const statusClass = w.status === 'Approved' ? 'badge-approved' : w.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+    return `<div class="card"><div class="flex-between"><div><div class="text-sm font-bold text-yellow-400">${escapeHtml(w.user || 'N/A')}</div><div class="text-xs text-gray">📱 ${escapeHtml(w.mobile || 'N/A')}</div><div class="text-xs text-gray">₹${w.amount || 0} | ${escapeHtml(w.time || '')}</div><div class="flex-center gap-1" style="margin-top:2px;"><span class="badge ${statusClass}">${escapeHtml(w.status || 'Pending')}</span></div></div><div class="text-right"><div class="text-lg font-bold text-red">-₹${w.amount || 0}</div><div class="flex-center gap-1" style="margin-top:3px;"><button onclick="deleteWithdrawItem('${w.userId}', ${w.index})" class="btn-sm btn-red" style="font-size:9px;">🗑️ हटाएं</button>${w.status === 'Pending' ? `<button onclick="approveWithdraw('${w.userId}', ${w.txId})" class="btn-sm btn-green" style="font-size:9px;">✅</button><button onclick="rejectWithdraw('${w.userId}', ${w.txId})" class="btn-sm btn-red" style="font-size:9px;">❌</button>` : ''}</div></div></div><div class="withdraw-detail" style="margin-top:4px;padding-top:4px;border-top:1px solid #334155;"><div>🏦 बैंक: <span>${escapeHtml(bank.bankName || 'N/A')}</span></div><div>👤 होल्डर: <span>${escapeHtml(bank.accName || 'N/A')}</span></div><div>🔢 अकाउंट: <span>${escapeHtml(bank.accNumber || 'N/A')}</span></div><div>🏷️ IFSC: <span>${escapeHtml(bank.ifsc || 'N/A')}</span></div></div></div>`;
   }).join('');
 }
 
-// ============================================================
-// ====================== RENDER: UTR REQUESTS =================
-// ============================================================
 function renderUtrRequests() {
   let allReqs = [];
-  Object.values(users).forEach(u => {
-    (u.utrRequests || []).forEach((req, idx) => {
-      allReqs.push({ ...req, user: u.name, mobile: u.mobile, userId: u.id, index: idx });
-    });
-  });
+  Object.values(users).forEach(u => { (u.utrRequests || []).forEach((req, idx) => { allReqs.push({ ...req, user: u.name, mobile: u.mobile, userId: u.id, index: idx }); }); });
   allReqs.sort((a,b) => (b.ts || 0) - (a.ts || 0));
-
-  if (allReqs.length === 0) {
-    return '<div class="card text-gray text-center">कोई UTR अनुरोध नहीं है</div>';
-  }
-
+  if (allReqs.length === 0) return '<div class="card text-gray text-center">कोई UTR अनुरोध नहीं है</div>';
   return allReqs.map(req => {
-    const isProcessed = req.status !== 'Pending';
-    const statusClass = req.status === 'Approved' ? 'badge-approved' : req.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-    
-    return `
-      <div class="card ${isProcessed ? 'opacity-50' : ''}" style="border-color: #06b6d4;">
-        <div class="flex-between">
-          <div>
-            <div class="text-sm font-bold text-yellow-400">${escapeHtml(req.user || 'N/A')}</div>
-            <div class="text-xs text-gray">${escapeHtml(req.mobile || 'N/A')}</div>
-            <div class="text-xs text-gray">₹${req.amount || 0} | ${escapeHtml(req.time || '')}</div>
-            <div class="text-xs text-cyan-400 mt-1 break-all">UTR: ${escapeHtml(req.utr || 'N/A')}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-lg font-bold text-green">₹${req.amount || 0}</div>
-            <div class="flex-center gap-1" style="margin-top:3px;">
-              ${!isProcessed ? `
-                <button onclick="approveUtr('${req.userId}', ${req.index})" class="btn-sm btn-green" style="font-size:9px;">✅ स्वीकार</button>
-                <button onclick="rejectUtr('${req.userId}', ${req.index})" class="btn-sm btn-red" style="font-size:9px;">❌ नकार</button>
-              ` : `<span class="badge ${statusClass}">${escapeHtml(req.status)}</span>`}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    const isProcessed = req.status !== 'Pending'; const statusClass = req.status === 'Approved' ? 'badge-approved' : req.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+    return `<div class="card ${isProcessed ? 'opacity-50' : ''}" style="border-color: #06b6d4;"><div class="flex-between"><div><div class="text-sm font-bold text-yellow-400">${escapeHtml(req.user || 'N/A')}</div><div class="text-xs text-gray">${escapeHtml(req.mobile || 'N/A')}</div><div class="text-xs text-gray">₹${req.amount || 0} | ${escapeHtml(req.time || '')}</div><div class="text-xs text-cyan-400 mt-1 break-all">UTR: ${escapeHtml(req.utr || 'N/A')}</div></div><div class="text-right"><div class="text-lg font-bold text-green">₹${req.amount || 0}</div><div class="flex-center gap-1" style="margin-top:3px;">${!isProcessed ? `<button onclick="approveUtr('${req.userId}', ${req.index})" class="btn-sm btn-green" style="font-size:9px;">✅ स्वीकार</button><button onclick="rejectUtr('${req.userId}', ${req.index})" class="btn-sm btn-red" style="font-size:9px;">❌ नकार</button>` : `<span class="badge ${statusClass}">${escapeHtml(req.status)}</span>`}</div></div></div></div>`;
   }).join('');
 }
 
 function approveUtr(userId, index) {
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  const reqs = u.utrRequests || [];
-  if (index >= reqs.length) return showToast('अनुरोध नहीं मिला', 'error');
-  
-  const req = reqs[index];
-  if (!req || req.status !== 'Pending') return showToast('यह पहले ही प्रोसेस हो चुका है', 'warning');
-  
+  const u = users[userId]; if (!u) return showToast('यूजर नहीं मिला', 'error');
+  const reqs = u.utrRequests || []; if (index >= reqs.length) return showToast('अनुरोध नहीं मिला', 'error');
+  const req = reqs[index]; if (!req || req.status !== 'Pending') return showToast('यह पहले ही प्रोसेस हो चुका है', 'warning');
   reqs[index].status = 'Approved';
-  
   const depHist = Array.isArray(u.depositHistory) ? u.depositHistory : [];
-  depHist.push({ amount: req.amount, time: new Date().toLocaleString(), ts: Date.now(), desc: 'UTR Approved', status: 'Success', utr: req.utr });
-  
-  // Adding to Bonus Balance instead of Withdrawable so user can't withdraw immediately
-  const updates = {
-    utrRequests: reqs,
-    depositHistory: depHist.slice(-30),
-    balance: (u.balance || 0) + req.amount,
-    bonusBalance: (u.bonusBalance || 0) + req.amount 
-  };
-  
-  if (window.db) {
-    window.db.ref('tp_users/' + userId).update(updates).then(() => {
-      users[userId] = { ...users[userId], ...updates };
-      addAdminLog('utr_approve', userId, 'UTR ₹' + req.amount + ' approved');
-      showToast('UTR स्वीकृत! ₹' + req.amount + ' बैलेंस में जोड़े गए।', 'success');
-      renderContent(true);
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
-  }
+  const bonusAmt = Math.floor(req.amount * ((config.depositBonusPercent || 5) / 100));
+  const totalAmt = req.amount + bonusAmt;
+  depHist.push({ amount: req.amount, bonus: bonusAmt, time: new Date().toLocaleString(), ts: Date.now(), desc: `UTR Approved (+5% Bonus)`, status: 'Success', utr: req.utr });
+  const updates = { utrRequests: reqs, depositHistory: depHist.slice(-30), balance: (u.balance || 0) + totalAmt, bonusBalance: (u.bonusBalance || 0) + bonusAmt };
+  if (req.amount >= 100) updates.hasDepositedAfter250 = true; 
+  if (window.db) { window.db.ref('tp_users/' + userId).update(updates).then(() => { users[userId] = { ...users[userId], ...updates }; addAdminLog('utr_approve', userId, 'UTR ₹' + req.amount + ' approved with ₹' + bonusAmt + ' bonus'); showToast('UTR स्वीकृत! ₹' + totalAmt + ' बैलेंस में जोड़े गए।', 'success'); renderContent(true); }); }
 }
-
 function rejectUtr(userId, index) {
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  const reqs = u.utrRequests || [];
-  if (index >= reqs.length) return showToast('अनुरोध नहीं मिला', 'error');
-  
-  const req = reqs[index];
-  if (!req || req.status !== 'Pending') return showToast('यह पहले ही प्रोसेस हो चुका है', 'warning');
-  
+  const u = users[userId]; if (!u) return showToast('यूजर नहीं मिला', 'error');
+  const reqs = u.utrRequests || []; if (index >= reqs.length) return showToast('अनुरोध नहीं मिला', 'error');
+  const req = reqs[index]; if (!req || req.status !== 'Pending') return showToast('यह पहले ही प्रोसेस हो चुका है', 'warning');
   reqs[index].status = 'Rejected';
-  
-  if (window.db) {
-    window.db.ref('tp_users/' + userId + '/utrRequests').set(reqs).then(() => {
-      users[userId].utrRequests = reqs;
-      addAdminLog('utr_reject', userId, 'UTR ₹' + req.amount + ' rejected');
-      showToast('UTR अस्वीकृत किया गया।', 'success');
-      renderContent(true);
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
-  }
+  if (window.db) { window.db.ref('tp_users/' + userId + '/utrRequests').set(reqs).then(() => { users[userId].utrRequests = reqs; addAdminLog('utr_reject', userId, 'UTR ₹' + req.amount + ' rejected'); showToast('UTR अस्वीकृत किया गया।', 'success'); renderContent(true); }); }
 }
 
-// ============================================================
-// ====================== RENDER: REFERRALS ====================
-// ============================================================
 function renderReferrals() {
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  
-  let todayReferrals = [];
-  let allReferrals = [];
-  
-  Object.values(users).forEach(u => {
-    if (u.referralCode) {
-      const refs = Object.values(users).filter(r => r.referredBy === u.referralCode);
-      refs.forEach(r => {
-        allReferrals.push({
-          referrer: u,
-          referred: r,
-          referredAt: r.createdAt || 0
-        });
-        if (r.createdAt && r.createdAt >= startToday) {
-          todayReferrals.push({
-            referrer: u,
-            referred: r,
-            referredAt: r.createdAt
-          });
-        }
-      });
-    }
-  });
-  
+  const now = new Date(); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  let todayReferrals = [], allReferrals = [];
+  Object.values(users).forEach(u => { if (u.referralCode) { const refs = Object.values(users).filter(r => r.referredBy === u.referralCode); refs.forEach(r => { allReferrals.push({ referrer: u, referred: r, referredAt: r.createdAt || 0 }); if (r.createdAt && r.createdAt >= startToday) todayReferrals.push({ referrer: u, referred: r, referredAt: r.createdAt }); }); } });
   todayReferrals.sort((a,b) => b.referredAt - a.referredAt);
-  
   const referrerCounts = {};
-  allReferrals.forEach(r => {
-    const id = r.referrer.id;
-    if (!referrerCounts[id]) {
-      referrerCounts[id] = { name: r.referrer.name, count: 0, earnings: r.referrer.referralEarnings || 0 };
-    }
-    referrerCounts[id].count++;
-  });
-  
+  allReferrals.forEach(r => { const id = r.referrer.id; if (!referrerCounts[id]) referrerCounts[id] = { name: r.referrer.name, count: 0, earnings: r.referrer.referralEarnings || 0 }; referrerCounts[id].count++; });
   const topReferrers = Object.values(referrerCounts).sort((a,b) => b.count - a.count).slice(0, 10);
-  
-  let todayHtml = todayReferrals.map(r => `
-    <div class="referral-entry">
-      <span class="text-yellow">${escapeHtml(r.referrer.name)}</span>
-      <span class="text-gray">→</span>
-      <span class="text-white">${escapeHtml(r.referred.name)}</span>
-      <span class="text-gray text-xs">${escapeHtml(r.referred.mobile)}</span>
-      <span class="text-gray text-xs">${new Date(r.referredAt).toLocaleTimeString()}</span>
-    </div>
-  `).join('');
-
-  let topHtml = topReferrers.map((r, i) => `
-    <div class="referral-entry">
-      <span class="text-yellow">${i+1}. ${escapeHtml(r.name)}</span>
-      <span class="text-white">${r.count} रेफरल्स</span>
-      <span class="text-green">₹${r.earnings.toLocaleString()}</span>
-    </div>
-  `).join('');
-
+  let todayHtml = todayReferrals.map(r => `<div class="referral-entry"><span class="text-yellow">${escapeHtml(r.referrer.name)}</span><span class="text-gray">→</span><span class="text-white">${escapeHtml(r.referred.name)}</span><span class="text-gray text-xs">${escapeHtml(r.referred.mobile)}</span><span class="text-gray text-xs">${new Date(r.referredAt).toLocaleTimeString()}</span></div>`).join('');
+  let topHtml = topReferrers.map((r, i) => `<div class="referral-entry"><span class="text-yellow">${i+1}. ${escapeHtml(r.name)}</span><span class="text-white">${r.count} रेफरल्स</span><span class="text-green">₹${r.earnings.toLocaleString()}</span></div>`).join('');
   const totalToday = todayReferrals.length;
-
-  return `
-    <div class="grid-3" style="margin-bottom:10px;">
-      <div class="stat-box"><div class="num text-green">${totalToday}</div><div class="label">आज के रेफरल्स</div></div>
-      <div class="stat-box"><div class="num text-yellow">${allReferrals.length}</div><div class="label">कुल रेफरल्स</div></div>
-      <div class="stat-box"><div class="num text-purple-400">${topReferrers.length}</div><div class="label">एक्टिव रेफरलर्स</div></div>
-    </div>
-
-    <div class="card" style="border-color:#22c55e;">
-      <div class="card-title text-green">🏆 टॉप रेफरलर्स</div>
-      ${topHtml || '<span class="text-gray text-xs">कोई रेफरल नहीं</span>'}
-    </div>
-
-    <div class="card" style="border-color:#8b5cf6;">
-      <div class="card-title text-purple-400">📅 आज के रेफरल्स (${totalToday})</div>
-      ${todayHtml || '<span class="text-gray text-xs">आज कोई रेफरल नहीं</span>'}
-    </div>
-  `;
+  return `<div class="grid-3" style="margin-bottom:10px;"><div class="stat-box"><div class="num text-green">${totalToday}</div><div class="label">आज के रेफरल्स</div></div><div class="stat-box"><div class="num text-yellow">${allReferrals.length}</div><div class="label">कुल रेफरल्स</div></div><div class="stat-box"><div class="num text-purple-400">${topReferrers.length}</div><div class="label">एक्टिव रेफरलर्स</div></div></div><div class="card" style="border-color:#22c55e;"><div class="card-title text-green">🏆 टॉप रेफरलर्स</div>${topHtml || '<span class="text-gray text-xs">कोई रेफरल नहीं</span>'}</div><div class="card" style="border-color:#8b5cf6;"><div class="card-title text-purple-400">📅 आज के रेफरल्स (${totalToday})</div>${todayHtml || '<span class="text-gray text-xs">आज कोई रेफरल नहीं</span>'}</div>`;
 }
 
-// ============================================================
-// ====================== RENDER: REPORTS ======================
-// ============================================================
 function renderReports() {
-  let totalBalance = 0, totalDeposits = 0, totalWithdrawals = 0;
-  let blockedCount = 0, deletedHistoryCount = 0;
-  let topDepositors = [], topPlayers = [];
-
-  Object.values(users).forEach(u => {
-    totalBalance += (u.balance || 0);
-    if (u.isBlocked) blockedCount++;
-    
-    const userDeposits = (u.depositHistory || []).reduce((s, d) => {
-      if (!d._deleted) return s + (parseInt(d.amount)||0);
-      return s;
-    }, 0);
-    totalDeposits += userDeposits;
-    
-    const userWithdraws = (u.withdrawHistory || []).filter(w => w.status === 'Approved' && !w._deleted).reduce((s, w) => s + (parseInt(w.amount)||0), 0);
-    totalWithdrawals += userWithdraws;
-    
-    const delDep = (u.depositHistory || []).filter(d => d._deleted).length;
-    const delWd = (u.withdrawHistory || []).filter(w => w._deleted).length;
-    const delGame = (u.gameHistory || []).filter(g => g._deleted).length;
-    deletedHistoryCount += (delDep + delWd + delGame);
-    
-    topDepositors.push({ name: u.name, id: u.id, amount: userDeposits });
-    topPlayers.push({ name: u.name, id: u.id, games: (u.gameHistory || []).length });
-  });
-
-  topDepositors.sort((a,b) => b.amount - a.amount);
-  topPlayers.sort((a,b) => b.games - a.games);
-
-  let topDepHtml = topDepositors.slice(0, 5).map((u, i) => `
-    <div class="flex-between text-xs" style="border-bottom:1px solid #1e293b;padding:2px 0;">
-      <span>${i+1}. ${escapeHtml(u.name)}</span>
-      <span class="text-green">₹${u.amount.toLocaleString()}</span>
-    </div>
-  `).join('') || '<span class="text-gray text-xs">कोई डेटा नहीं</span>';
-
-  let topPlayHtml = topPlayers.slice(0, 5).map((u, i) => `
-    <div class="flex-between text-xs" style="border-bottom:1px solid #1e293b;padding:2px 0;">
-      <span>${i+1}. ${escapeHtml(u.name)}</span>
-      <span class="text-purple-400">${u.games} गेम्स</span>
-    </div>
-  `).join('') || '<span class="text-gray text-xs">कोई डेटा नहीं</span>';
-
-  return `
-    <div class="grid-2" style="margin-bottom:10px;">
-      <div class="stat-box"><div class="num text-green">₹${totalBalance.toLocaleString()}</div><div class="label">कुल बैलेंस</div></div>
-      <div class="stat-box"><div class="num text-green">₹${totalDeposits.toLocaleString()}</div><div class="label">कुल डिपॉजिट</div></div>
-      <div class="stat-box"><div class="num text-red">₹${totalWithdrawals.toLocaleString()}</div><div class="label">कुल विड्रॉल</div></div>
-      <div class="stat-box" style="border-color:#ef4444;"><div class="num text-red">${blockedCount}</div><div class="label">ब्लॉक यूजर्स</div></div>
-      <div class="stat-box" style="border-color:#f97316;"><div class="num text-orange-400">${deletedHistoryCount}</div><div class="label">हटाई गई हिस्ट्री</div></div>
-      <div class="stat-box"><div class="num text-yellow">${Object.keys(users).length}</div><div class="label">कुल यूजर्स</div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title text-green">🏆 टॉप डिपॉजिटर्स</div>
-      ${topDepHtml}
-    </div>
-
-    <div class="card">
-      <div class="card-title text-purple-400">🎮 टॉप गेमर</div>
-      ${topPlayHtml}
-    </div>
-
-    <div class="card">
-      <div class="card-title text-blue-400">📥 एक्सपोर्ट डेटा</div>
-      <button onclick="exportData()" class="btn-sm btn-blue" style="width:100%;padding:6px;">📊 CSV डाउनलोड करें</button>
-    </div>
-  `;
+  let totalBalance = 0, totalDeposits = 0, totalWithdrawals = 0, blockedCount = 0; let topDepositors = [], topPlayers = [];
+  Object.values(users).forEach(u => { totalBalance += (u.balance || 0); if (u.isBlocked) blockedCount++; const userDeposits = (u.depositHistory || []).reduce((s, d) => s + (parseInt(d.amount)||0) + (parseInt(d.bonus)||0), 0); totalDeposits += userDeposits; const userWithdraws = (u.withdrawHistory || []).filter(w => w.status === 'Approved').reduce((s, w) => s + (parseInt(w.amount)||0), 0); totalWithdrawals += userWithdraws; topDepositors.push({ name: u.name, id: u.id, amount: userDeposits }); topPlayers.push({ name: u.name, id: u.id, games: (u.gameHistory || []).length }); });
+  topDepositors.sort((a,b) => b.amount - a.amount); topPlayers.sort((a,b) => b.games - a.games);
+  let topDepHtml = topDepositors.slice(0, 5).map((u, i) => `<div class="flex-between text-xs" style="border-bottom:1px solid #1e293b;padding:2px 0;"><span>${i+1}. ${escapeHtml(u.name)}</span><span class="text-green">₹${u.amount.toLocaleString()}</span></div>`).join('') || '<span class="text-gray text-xs">कोई डेटा नहीं</span>';
+  let topPlayHtml = topPlayers.slice(0, 5).map((u, i) => `<div class="flex-between text-xs" style="border-bottom:1px solid #1e293b;padding:2px 0;"><span>${i+1}. ${escapeHtml(u.name)}</span><span class="text-purple-400">${u.games} गेम्स</span></div>`).join('') || '<span class="text-gray text-xs">कोई डेटा नहीं</span>';
+  return `<div class="grid-2" style="margin-bottom:10px;"><div class="stat-box"><div class="num text-green">₹${totalBalance.toLocaleString()}</div><div class="label">कुल बैलेंस</div></div><div class="stat-box"><div class="num text-green">₹${totalDeposits.toLocaleString()}</div><div class="label">कुल डिपॉजिट</div></div><div class="stat-box"><div class="num text-red">₹${totalWithdrawals.toLocaleString()}</div><div class="label">कुल विड्रॉल</div></div><div class="stat-box" style="border-color:#ef4444;"><div class="num text-red">${blockedCount}</div><div class="label">ब्लॉक यूजर्स</div></div><div class="stat-box"><div class="num text-yellow">${Object.keys(users).length}</div><div class="label">कुल यूजर्स</div></div></div><div class="card"><div class="card-title text-green">🏆 टॉप डिपॉजिटर्स</div>${topDepHtml}</div><div class="card"><div class="card-title text-purple-400">🎮 टॉप गेमर</div>${topPlayHtml}</div><div class="card"><div class="card-title text-blue-400">📥 एक्सपोर्ट डेटा</div><button onclick="exportData()" class="btn-sm btn-blue" style="width:100%;padding:6px;">📊 CSV डाउनलोड करें</button></div>`;
 }
 
-// ============================================================
-// ====================== RENDER: LOGS =========================
-// ============================================================
 function renderLogs() {
   const logs = adminLogs.slice().reverse().slice(0, 100);
-  
-  let logsHtml = logs.map(log => {
-    let actionClass = '';
-    let actionIcon = '';
-    if (log.action === 'delete' || log.action === 'ghost_delete' || log.action === 'history_delete' || log.action === 'deposit_delete' || log.action === 'withdraw_delete') {
-      actionClass = 'delete';
-      actionIcon = '🗑️';
-    } else if (log.action === 'restore' || log.action === 'history_restore' || log.action === 'trash_restore' || log.action === 'deposit_restore' || log.action === 'withdraw_restore') {
-      actionClass = 'restore';
-      actionIcon = '↩️';
-    } else if (log.action === 'block') {
-      actionClass = 'block';
-      actionIcon = '🔒';
-    } else if (log.action === 'unblock') {
-      actionClass = 'unblock';
-      actionIcon = '🔓';
-    } else if (log.action === 'balance_add' || log.action === 'balance_deduct') {
-      actionClass = 'unblock';
-      actionIcon = '💰';
-    } else {
-      actionIcon = '📝';
-    }
-    
-    return `
-      <div class="log-entry">
-        <span class="log-time">${escapeHtml(log.time || '')}</span>
-        <span class="log-action ${actionClass}">${actionIcon} ${escapeHtml(log.action)}</span>
-        <span class="text-gray">${escapeHtml(log.userName || 'N/A')} (${escapeHtml(log.userId || '')})</span>
-        <span class="text-gray text-xs">${escapeHtml(log.details || '')}</span>
-      </div>
-    `;
-  }).join('');
-
-  return `
-    <div class="card" style="border-color:#3b82f6;">
-      <div class="card-title text-blue-400">📋 एडमिन एक्टिविटी लॉग्स</div>
-      ${logsHtml || '<span class="text-gray text-xs">कोई लॉग नहीं मिला</span>'}
-    </div>
-  `;
+  let logsHtml = logs.map(log => { let actionClass = '', actionIcon = '📝'; if (log.action.includes('delete')) { actionClass = 'delete'; actionIcon = '🗑️'; } else if (log.action.includes('restore')) { actionClass = 'restore'; actionIcon = '↩️'; } else if (log.action === 'block') { actionClass = 'block'; actionIcon = '🔒'; } else if (log.action === 'unblock') { actionClass = 'unblock'; actionIcon = '🔓'; } else if (log.action.includes('balance')) { actionIcon = '💰'; } else if (log.action.includes('game')) { actionIcon = '🎮'; } return `<div class="log-entry"><span class="log-time">${escapeHtml(log.time || '')}</span><span class="log-action ${actionClass}">${actionIcon} ${escapeHtml(log.action)}</span><span class="text-gray">${escapeHtml(log.userName || 'N/A')} (${escapeHtml(log.userId || '')})</span><span class="text-gray text-xs">${escapeHtml(log.details || '')}</span></div>`; }).join('');
+  return `<div class="card" style="border-color:#3b82f6;"><div class="card-title text-blue-400">📋 एडमिन एक्टिविटी लॉग्स</div>${logsHtml || '<span class="text-gray text-xs">कोई लॉग नहीं मिला</span>'}</div>`;
 }
 
-// ============================================================
-// ====================== RENDER: TRASH ========================
-// ============================================================
 function renderTrash() {
   let trashHtml = '';
-  
-  Object.entries(trashUsers).forEach(([id, u]) => {
-    trashHtml += `
-      <div class="card">
-        <div class="flex-between">
-          <div>
-            <div class="text-sm font-bold text-yellow-400">${escapeHtml(u.name || 'N/A')}</div>
-            <div class="text-xs text-gray">${escapeHtml(u.id || 'N/A')} | ${escapeHtml(u.mobile || 'N/A')}</div>
-            <div class="text-xs text-gray">₹${u.balance || 0} बैलेंस</div>
-            <div class="text-[9px] flex-center gap-1" style="margin-top:2px;">
-              <span class="badge ${u.isBlocked ? 'badge-blocked' : 'badge-active'}">${u.isBlocked ? '🔒 ब्लॉक' : '🔓 अनब्लॉक'}</span>
-              <span class="badge badge-active">📊 ${(u.depositHistory||[]).length} डी | ${(u.withdrawHistory||[]).length} वि</span>
-            </div>
-          </div>
-          <div class="flex-center gap-1">
-            <button onclick="restoreUser('${id}')" class="btn-sm btn-green" style="font-size:9px;">वापस लाएं</button>
-            <button onclick="deleteUserPermanently('${id}')" class="btn-sm btn-red" style="font-size:9px;">पक्का डिलीट</button>
-          </div>
-        </div>
-      </div>
-    `;
-  });
-
+  Object.entries(trashUsers).forEach(([id, u]) => { trashHtml += `<div class="card"><div class="flex-between"><div><div class="text-sm font-bold text-yellow-400">${escapeHtml(u.name || 'N/A')}</div><div class="text-xs text-gray">${escapeHtml(u.id || 'N/A')} | ${escapeHtml(u.mobile || 'N/A')}</div><div class="text-xs text-gray">₹${u.balance || 0} बैलेंस</div></div><div class="flex-center gap-1"><button onclick="restoreUser('${id}')" class="btn-sm btn-green" style="font-size:9px;">वापस लाएं</button><button onclick="deleteUserPermanently('${id}')" class="btn-sm btn-red" style="font-size:9px;">पक्का डिलीट</button></div></div></div>`; });
   const trashCount = Object.keys(trashUsers).length;
-  
-  return `
-    <div class="card" style="border-color:#ef4444;">
-      <div class="card-title text-red">🗑️ हटाए गए यूजर्स (${trashCount})</div>
-      ${trashHtml || '<span class="text-gray text-xs">डिब्बा खाली है</span>'}
-      ${trashCount > 0 ? `<button onclick="emptyTrash()" class="btn-sm btn-red" style="width:100%;padding:5px;margin-top:4px;">🗑️ डिब्बा खाली करें</button>` : ''}
-    </div>
-  `;
+  return `<div class="card" style="border-color:#ef4444;"><div class="card-title text-red">🗑️ हटाए गए यूजर्स (${trashCount})</div>${trashHtml || '<span class="text-gray text-xs">डिब्बा खाली है</span>'}${trashCount > 0 ? `<button onclick="emptyTrash()" class="btn-sm btn-red" style="width:100%;padding:5px;margin-top:4px;">🗑️ डिब्बा खाली करें</button>` : ''}</div>`;
 }
 
-// ============================================================
-// ====================== DEPOSIT DELETE/RESTORE ===============
-// ============================================================
 function deleteDepositItem(userId, index) {
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  
-  const history = u.depositHistory || [];
-  if (index >= history.length) return showToast('आइटम नहीं मिला', 'error');
-  
-  const item = history[index];
-  if (!item) return showToast('आइटम नहीं मिला', 'error');
-  
-  if (!confirm(`क्या आप ₹${item.amount} की यह डिपॉजिट हटाना चाहते हैं? (${item.time || ''})`)) return;
-  
-  history[index] = { ...history[index], _deleted: true };
-  
-  if (window.db) {
-    window.db.ref('tp_users/' + userId + '/depositHistory').set(history)
-      .then(() => {
-        users[userId].depositHistory = history;
-        addAdminLog('deposit_delete', userId, 'Deposit ₹' + item.amount + ' deleted');
-        showToast('✅ डिपॉजिट हटा दी गई!', 'success');
-        scheduleRender(true);
-      })
-      .catch(e => showToast('Error: ' + e.message, 'error'));
-  }
+  const u = users[userId]; if (!u) return showToast('यूजर नहीं मिला', 'error');
+  let history = u.depositHistory || []; if (index >= history.length) return showToast('आइटम नहीं मिला', 'error');
+  const item = history[index]; if (!item) return showToast('आइटम नहीं मिला', 'error');
+  if (!confirm(`क्या आप ₹${item.amount} की यह डिपॉजिट हिस्ट्री पक्का हटाना चाहते हैं?`)) return;
+  history.splice(index, 1); 
+  if (window.db) { window.db.ref('tp_users/' + userId + '/depositHistory').set(history).then(() => { users[userId].depositHistory = history; addAdminLog('deposit_delete', userId, 'Deposit ₹' + item.amount + ' deleted permanently'); showToast('✅ डिपॉजिट हिस्ट्री हटा दी गई!', 'success'); scheduleRender(true); }); }
 }
-
-function restoreDepositItem(userId, index) {
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  
-  const history = u.depositHistory || [];
-  if (index >= history.length) return showToast('आइटम नहीं मिला', 'error');
-  
-  const item = history[index];
-  if (!item) return showToast('आइटम नहीं मिला', 'error');
-  
-  if (!item._deleted) return showToast('⚠️ यह डिपॉजिट पहले से सक्रिय है!', 'warning');
-  
-  delete history[index]._deleted;
-  
-  if (window.db) {
-    window.db.ref('tp_users/' + userId + '/depositHistory').set(history)
-      .then(() => {
-        users[userId].depositHistory = history;
-        addAdminLog('deposit_restore', userId, 'Deposit ₹' + item.amount + ' restored');
-        showToast('✅ डिपॉजिट वापस आ गई!', 'success');
-        scheduleRender(true);
-      })
-      .catch(e => showToast('Error: ' + e.message, 'error'));
-  }
-}
-
-// ============================================================
-// ====================== WITHDRAW DELETE/RESTORE ==============
-// ============================================================
 function deleteWithdrawItem(userId, index) {
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  
-  const history = u.withdrawHistory || [];
-  if (index >= history.length) return showToast('आइटम नहीं मिला', 'error');
-  
-  const item = history[index];
-  if (!item) return showToast('आइटम नहीं मिला', 'error');
-  
-  if (!confirm(`क्या आप ₹${item.amount} की यह विड्रॉल हटाना चाहते हैं? (${item.time || ''})`)) return;
-  
-  history[index] = { ...history[index], _deleted: true };
-  
-  if (window.db) {
-    window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history)
-      .then(() => {
-        users[userId].withdrawHistory = history;
-        addAdminLog('withdraw_delete', userId, 'Withdraw ₹' + item.amount + ' deleted');
-        showToast('✅ विड्रॉल हटा दी गई!', 'success');
-        scheduleRender(true);
-      })
-      .catch(e => showToast('Error: ' + e.message, 'error'));
-  }
+  const u = users[userId]; if (!u) return showToast('यूजर नहीं मिला', 'error');
+  let history = u.withdrawHistory || []; if (index >= history.length) return showToast('आइटम नहीं मिला', 'error');
+  const item = history[index]; if (!item) return showToast('आइटम नहीं मिला', 'error');
+  if (!confirm(`क्या आप ₹${item.amount} की यह विड्रॉल हिस्ट्री पक्का हटाना चाहते हैं?`)) return;
+  history.splice(index, 1); 
+  if (window.db) { window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history).then(() => { users[userId].withdrawHistory = history; addAdminLog('withdraw_delete', userId, 'Withdraw ₹' + item.amount + ' deleted permanently'); showToast('✅ विड्रॉल हिस्ट्री हटा दी गई!', 'success'); scheduleRender(true); }); }
 }
 
-function restoreWithdrawItem(userId, index) {
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  
-  const history = u.withdrawHistory || [];
-  if (index >= history.length) return showToast('आइटम नहीं मिला', 'error');
-  
-  const item = history[index];
-  if (!item) return showToast('आइटम नहीं मिला', 'error');
-  
-  if (!item._deleted) return showToast('⚠️ यह विड्रॉल पहले से सक्रिय है!', 'warning');
-  
-  delete history[index]._deleted;
-  
-  if (window.db) {
-    window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history)
-      .then(() => {
-        users[userId].withdrawHistory = history;
-        addAdminLog('withdraw_restore', userId, 'Withdraw ₹' + item.amount + ' restored');
-        showToast('✅ विड्रॉल वापस आ गई!', 'success');
-        scheduleRender(true);
-      })
-      .catch(e => showToast('Error: ' + e.message, 'error'));
-  }
-}
-
-// ============================================================
-// ====================== ACTION FUNCTIONS =====================
-// ============================================================
-
-function updateTelegram() {
-  config.telegramLink = document.getElementById('telegramInput').value;
-  saveConfigToDB();
-  showToast('टेलीग्राम लिंक अपडेट हो गया!', 'success');
-}
-function updateWhatsapp() {
-  config.whatsappLink = document.getElementById('whatsappInput').value;
-  saveConfigToDB();
-  showToast('व्हाट्सएप लिंक अपडेट हो गया!', 'success');
-}
-function updateFakeOnline() {
-  config.fakeOnline = parseInt(document.getElementById('fakeOnlineInput').value) || 0;
-  saveConfigToDB();
-  showToast('फेक ऑनलाइन सेट हो गया!', 'success');
-}
-function updateFakePlaying() {
-  config.fakePlaying = parseInt(document.getElementById('fakePlayingInput').value) || 0;
-  saveConfigToDB();
-  showToast('फेक गेमिंग सेट हो गया!', 'success');
-}
-function updateMinWithdraw() {
-  config.minWithdraw = parseInt(document.getElementById('minWithdrawInput').value) || 100;
-  saveConfigToDB();
-  showToast('मिनिमम विड्रॉल सेट हो गया!', 'success');
-}
-function updateBroadcast() {
-  config.broadcastMsg = document.getElementById('broadcastInput').value;
-  saveConfigToDB();
-  showToast('ब्रॉडकास्ट मैसेज सेट हो गया!', 'success');
-}
-
-function addBank() {
-  const name = document.getElementById('newBankInput').value.trim();
-  if (!name) return showToast('बैंक का नाम दर्ज करें', 'warning');
-  if (!config.bankList) config.bankList = [];
-  if (config.bankList.includes(name)) return showToast('यह बैंक पहले से है', 'warning');
-  config.bankList.push(name);
-  saveConfigToDB();
-  showToast('बैंक जोड़ा गया!', 'success');
-  document.getElementById('newBankInput').value = '';
-}
-function deleteBank(name) {
-  config.bankList = config.bankList.filter(b => b !== name);
-  saveConfigToDB();
-  showToast('बैंक हटाया गया!', 'success');
-}
-
-function addDepositAmount() {
-  const amt = parseInt(document.getElementById('newDepositAmountInput').value);
-  if (!amt || amt <= 0) return showToast('वैध राशि दर्ज करें', 'warning');
-  if (!config.depositAmounts) config.depositAmounts = [];
-  if (config.depositAmounts.includes(amt)) return showToast('यह राशि पहले से है', 'warning');
-  config.depositAmounts.push(amt);
-  config.depositAmounts.sort((a,b) => a-b);
-  saveConfigToDB();
-  showToast('डिपॉजिट अमाउंट जोड़ा गया!', 'success');
-  document.getElementById('newDepositAmountInput').value = '';
-}
-function deleteDepositAmount(amt) {
-  config.depositAmounts = config.depositAmounts.filter(a => a !== amt);
-  saveConfigToDB();
-  showToast('अमाउंट हटाया गया!', 'success');
-}
-
-function createPromo() {
-  const code = document.getElementById('promoCode').value.toUpperCase().trim();
-  const amount = parseInt(document.getElementById('promoAmount').value);
-  if (!code || !amount) return showToast('कोड और राशि दर्ज करें', 'warning');
-  if (!config.promoCodes) config.promoCodes = [];
-  if (config.promoCodes.find(p => p.code === code)) return showToast('यह कोड पहले से है', 'warning');
-  config.promoCodes.push({ code, amount, isActive: true });
-  saveConfigToDB();
-  showToast('प्रोमो कोड बन गया!', 'success');
-  document.getElementById('promoCode').value = '';
-  document.getElementById('promoAmount').value = '';
-}
-function togglePromo(code) {
-  const p = config.promoCodes.find(p => p.code === code);
-  if (p) { p.isActive = !p.isActive; saveConfigToDB(); showToast('प्रोमो स्टेटस बदला गया!', 'success'); }
-}
-function deletePromo(code) {
-  if (!confirm('प्रोमो कोड हटाएं?')) return;
-  config.promoCodes = config.promoCodes.filter(p => p.code !== code);
-  saveConfigToDB();
-  showToast('प्रोमो कोड हटाया गया!', 'success');
-}
-
-function resetTables() {
-  if (!window.db || !confirm('सभी लाइव टेबल्स रीसेट करें?')) return;
-  window.db.ref('tp_live_tables').remove();
-  showToast('सभी टेबल्स रीसेट हो गए!', 'success');
-}
-function deleteTable(id) {
-  if (!window.db || !confirm('यह टेबल हटाएं?')) return;
-  window.db.ref('tp_live_tables/' + id).remove();
-  showToast('टेबल हटा दी गई!', 'success');
-}
-
-function toggleBlock(id) {
-  const u = users[id];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  const newBlockState = !u.isBlocked;
-  saveUserToDB(id, { isBlocked: newBlockState });
-  addAdminLog(newBlockState ? 'block' : 'unblock', id, 'User ' + (newBlockState ? 'blocked' : 'unblocked'));
-  showToast(newBlockState ? '🔒 यूजर ब्लॉक किया गया!' : '🔓 यूजर अनब्लॉक किया गया!', 'success');
-}
+function updateTelegram() { config.telegramLink = document.getElementById('telegramInput').value; saveConfigToDB(); showToast('टेलीग्राम लिंक अपडेट हो गया!', 'success'); }
+function updateWhatsapp() { config.whatsappLink = document.getElementById('whatsappInput').value; saveConfigToDB(); showToast('व्हाट्सएप लिंक अपडेट हो गया!', 'success'); }
+function updateFakeOnline() { config.fakeOnline = parseInt(document.getElementById('fakeOnlineInput').value) || 0; saveConfigToDB(); showToast('फेक ऑनलाइन सेट हो गया!', 'success'); }
+function updateFakePlaying() { config.fakePlaying = parseInt(document.getElementById('fakePlayingInput').value) || 0; saveConfigToDB(); showToast('फेक गेमिंग सेट हो गया!', 'success'); }
+function updateMinWithdraw() { config.minWithdraw = parseInt(document.getElementById('minWithdrawInput').value) || 100; saveConfigToDB(); showToast('मिनिमम विड्रॉल सेट हो गया!', 'success'); }
+function updateBroadcast() { config.broadcastMsg = document.getElementById('broadcastInput').value; saveConfigToDB(); showToast('ब्रॉडकास्ट मैसेज सेट हो गया!', 'success'); }
+function addBank() { const name = document.getElementById('newBankInput').value.trim(); if (!name) return showToast('बैंक का नाम दर्ज करें', 'warning'); if (!config.bankList) config.bankList = []; if (config.bankList.includes(name)) return showToast('यह बैंक पहले से है', 'warning'); config.bankList.push(name); saveConfigToDB(); showToast('बैंक जोड़ा गया!', 'success'); document.getElementById('newBankInput').value = ''; }
+function deleteBank(name) { config.bankList = config.bankList.filter(b => b !== name); saveConfigToDB(); showToast('बैंक हटाया गया!', 'success'); }
+function addDepositAmount() { const amt = parseInt(document.getElementById('newDepositAmountInput').value); if (!amt || amt <= 0) return showToast('वैध राशि दर्ज करें', 'warning'); if (!config.depositAmounts) config.depositAmounts = []; if (config.depositAmounts.includes(amt)) return showToast('यह राशि पहले से है', 'warning'); config.depositAmounts.push(amt); config.depositAmounts.sort((a,b) => a-b); saveConfigToDB(); showToast('डिपॉजिट अमाउंट जोड़ा गया!', 'success'); document.getElementById('newDepositAmountInput').value = ''; }
+function deleteDepositAmount(amt) { config.depositAmounts = config.depositAmounts.filter(a => a !== amt); saveConfigToDB(); showToast('अमाउंट हटाया गया!', 'success'); }
+function createPromo() { const code = document.getElementById('promoCode').value.toUpperCase().trim(); const amount = parseInt(document.getElementById('promoAmount').value); if (!code || !amount) return showToast('कोड और राशि दर्ज करें', 'warning'); if (!config.promoCodes) config.promoCodes = []; if (config.promoCodes.find(p => p.code === code)) return showToast('यह कोड पहले से है', 'warning'); config.promoCodes.push({ code, amount, isActive: true }); saveConfigToDB(); showToast('प्रोमो कोड बन गया!', 'success'); document.getElementById('promoCode').value = ''; document.getElementById('promoAmount').value = ''; }
+function togglePromo(code) { const p = config.promoCodes.find(p => p.code === code); if (p) { p.isActive = !p.isActive; saveConfigToDB(); showToast('प्रोमो स्टेटस बदला गया!', 'success'); } }
+function deletePromo(code) { if (!confirm('प्रोमो कोड हटाएं?')) return; config.promoCodes = config.promoCodes.filter(p => p.code !== code); saveConfigToDB(); showToast('प्रोमो कोड हटाया गया!', 'success'); }
+function resetTables() { if (!window.db || !confirm('सभी लाइव टेबल्स रीसेट करें?')) return; window.db.ref('tp_live_tables').remove(); showToast('सभी टेबल्स रीसेट हो गए!', 'success'); }
+function deleteTable(id) { if (!window.db || !confirm('यह टेबल हटाएं?')) return; window.db.ref('tp_live_tables/' + id).remove(); showToast('टेबल हटा दी गई!', 'success'); }
+function toggleBlock(id) { const u = users[id]; if (!u) return showToast('यूजर नहीं मिला', 'error'); const newBlockState = !u.isBlocked; saveUserToDB(id, { isBlocked: newBlockState }); addAdminLog(newBlockState ? 'block' : 'unblock', id, 'User ' + (newBlockState ? 'blocked' : 'unblocked')); showToast(newBlockState ? '🔒 यूजर ब्लॉक किया गया!' : '🔓 यूजर अनब्लॉक किया गया!', 'success'); }
 
 function adjustBalance(id, type) {
   const amt = parseInt(document.getElementById('amt_' + id).value);
   if (!amt || amt <= 0) return showToast('वैध राशि दर्ज करें', 'warning');
-  const u = users[id];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-
-  const updates = {};
-  const newBalance = type === 'add' ? (u.balance || 0) + amt : Math.max(0, (u.balance || 0) - amt);
-  
+  const u = users[id]; if (!u) return showToast('यूजर नहीं मिला', 'error');
+  const updates = {}; const newBalance = type === 'add' ? (u.balance || 0) + amt : Math.max(0, (u.balance || 0) - amt);
   if (type === 'add') {
     updates.balance = newBalance;
-    updates.bonusBalance = (u.bonusBalance || 0) + amt; // Add to Bonus Balance, NOT Withdrawable
+    updates.bonusBalance = (u.bonusBalance || 0) + amt;
+    if (amt >= 100) updates.hasDepositedAfter250 = true; 
     const hist = Array.isArray(u.depositHistory) ? u.depositHistory : [];
     hist.push({ amount: amt, time: new Date().toLocaleString(), ts: Date.now(), desc: 'Admin Added (Bonus)', status: 'Success' });
     updates.depositHistory = hist.slice(-30);
@@ -1904,179 +736,53 @@ function adjustBalance(id, type) {
     hist.push({ txId: Date.now(), amount: amt, time: new Date().toLocaleString(), ts: Date.now(), status: 'Admin Deducted' });
     updates.withdrawHistory = hist.slice(-30);
   }
-  
   users[id] = { ...users[id], ...updates };
-  
   if (window.db) {
-    window.db.ref('tp_users/' + id).update(updates)
-      .then(() => {
-        addAdminLog(type === 'add' ? 'balance_add' : 'balance_deduct', id, (type === 'add' ? 'Added to Bonus' : 'Deducted') + ' ₹' + amt);
-        showToast((type === 'add' ? '₹' + amt + ' बोनस में जोड़े गए!' : '₹' + amt + ' कटे!'), 'success');
-        renderContent(true);
-      })
-      .catch(e => showToast('Error: ' + e.message, 'error'));
+    window.db.ref('tp_users/' + id).update(updates).then(() => {
+      addAdminLog(type === 'add' ? 'balance_add' : 'balance_deduct', id, (type === 'add' ? 'Added to Bonus' : 'Deducted') + ' ₹' + amt);
+      showToast((type === 'add' ? '₹' + amt + ' बोनस में जोड़े गए!' + (amt >= 100 ? ' (गेम अनलॉक)' : '') : '₹' + amt + ' कटे!'), 'success');
+      renderContent(true);
+    }).catch(e => showToast('Error: ' + e.message, 'error'));
   }
-  
   document.getElementById('amt_' + id).value = '';
 }
 
-function changePass(id) {
-  const pass = document.getElementById('pass_' + id).value;
-  if (!pass) return showToast('पासवर्ड दर्ज करें', 'warning');
-  saveUserToDB(id, { password: pass });
-  addAdminLog('password_change', id, 'Password changed');
-  showToast('पासवर्ड बदला गया!', 'success');
-}
-
-function editBank(id) {
-  const bankName = document.getElementById('bankName_' + id).value;
-  const accName = document.getElementById('accName_' + id).value;
-  const accNumber = document.getElementById('accNum_' + id).value;
-  const ifsc = document.getElementById('ifsc_' + id).value;
-  saveUserToDB(id, { bankDetails: { bankName, accName, accNumber, ifsc } });
-  addAdminLog('bank_update', id, 'Bank details updated');
-  showToast('बैंक डिटेल्स अपडेट हो गई!', 'success');
-}
-
-function deleteUserToTrash(id) {
-  if (!confirm('यूजर को डिब्बे में भेजें?')) return;
-  if (!window.db) return showToast('डेटाबेस कनेक्ट नहीं है', 'error');
-
-  const userRef = window.db.ref('tp_users/' + id);
-  const trashRef = window.db.ref('tp_trash/' + id);
-
-  userRef.once('value').then(snap => {
-    if (snap.val()) {
-      trashRef.set(snap.val()).then(() => {
-        userRef.remove().then(() => {
-          addAdminLog('trash_move', id, 'User moved to trash');
-          showToast('यूजर डिब्बे में गया!', 'success');
-          scheduleRender(true);
-        });
-      });
-    } else {
-      showToast('यूजर नहीं मिला', 'error');
-    }
-  }).catch(e => showToast('Error: ' + e.message, 'error'));
-}
-
-function restoreUser(id) {
-  if (!window.db) return showToast('डेटाबेस कनेक्ट नहीं है', 'error');
-  const trashRef = window.db.ref('tp_trash/' + id);
-  const userRef = window.db.ref('tp_users/' + id);
-
-  trashRef.once('value').then(snap => {
-    if (snap.val()) {
-      userRef.set(snap.val()).then(() => {
-        trashRef.remove().then(() => {
-          addAdminLog('trash_restore', id, 'User restored from trash');
-          showToast('यूजर वापस लाया गया!', 'success');
-          scheduleRender(true);
-        });
-      });
-    } else {
-      showToast('डिब्बे में यूजर नहीं मिला', 'error');
-    }
-  }).catch(e => showToast('Error: ' + e.message, 'error'));
-}
-
-function deleteUserPermanently(id) {
-  if (!confirm('इस यूजर को हमेशा के लिए हटाएं?')) return;
-  if (!window.db) return showToast('डेटाबेस कनेक्ट नहीं है', 'error');
-  window.db.ref('tp_trash/' + id).remove().then(() => {
-    addAdminLog('permanent_delete', id, 'User permanently deleted');
-    showToast('यूजर पक्का डिलीट हो गया!', 'success');
-    scheduleRender(true);
-  }).catch(e => showToast('Error: ' + e.message, 'error'));
-}
-
-function approveWithdraw(userId, txId) {
-  if (!confirm('विड्रॉल स्वीकृत करें?')) return;
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  const history = u.withdrawHistory || [];
-  const tx = history.find(t => t.txId === txId);
-  if (!tx) return showToast('ट्रांज़ैक्शन नहीं मिला', 'error');
-  tx.status = 'Approved';
-  window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history)
-    .then(() => {
-      users[userId].withdrawHistory = history;
-      addAdminLog('withdraw_approve', userId, '₹' + tx.amount + ' approved');
-      showToast('विड्रॉल सफल!', 'success');
+function deductWithdrawableBalance(id) {
+  const amt = parseInt(document.getElementById('wd_amt_' + id).value);
+  if (!amt || amt <= 0) return showToast('वैध राशि दर्ज करें', 'warning');
+  const u = users[id]; if (!u) return showToast('यूजर नहीं मिला', 'error');
+  const currentWd = u.withdrawableBalance || 0; const currentBal = u.balance || 0;
+  if (amt > currentWd) return showToast('यूजर के पास इतना विड्रॉल बैलेंस नहीं है। (केवल ₹' + currentWd + ' उपलब्ध)', 'error');
+  const newWd = Math.max(0, currentWd - amt); const newBal = Math.max(0, currentBal - amt);
+  if (window.db) {
+    window.db.ref('tp_users/' + id).update({ withdrawableBalance: newWd, balance: newBal }).then(() => {
+      users[id].withdrawableBalance = newWd; users[id].balance = newBal;
+      addAdminLog('wd_balance_deduct', id, 'Deducted ₹' + amt + ' from withdrawable balance');
+      showToast('✂️ ₹' + amt + ' विड्रॉल बैलेंस से कट गए!', 'success');
+      document.getElementById('wd_amt_' + id).value = '';
       renderContent(true);
-    })
-    .catch(e => showToast('Error: ' + e.message, 'error'));
+    }).catch(e => showToast('Error: ' + e.message, 'error'));
+  }
 }
 
-function rejectWithdraw(userId, txId) {
-  if (!confirm('विड्रॉल रिजेक्ट करें? पैसे वापस होंगे।')) return;
-  const u = users[userId];
-  if (!u) return showToast('यूजर नहीं मिला', 'error');
-  const history = u.withdrawHistory || [];
-  const tx = history.find(t => t.txId === txId);
-  if (!tx) return showToast('ट्रांज़ैक्शन नहीं मिला', 'error');
-  tx.status = 'Rejected';
-  const newBalance = (u.balance || 0) + tx.amount;
-  const newWd = (u.withdrawableBalance || 0) + tx.amount;
-  window.db.ref('tp_users/' + userId).update({
-    withdrawHistory: history,
-    balance: newBalance,
-    withdrawableBalance: newWd
-  }).then(() => {
-    users[userId].withdrawHistory = history;
-    users[userId].balance = newBalance;
-    users[userId].withdrawableBalance = newWd;
-    addAdminLog('withdraw_reject', userId, '₹' + tx.amount + ' rejected, refunded');
-    showToast('विड्रॉल रिजेक्ट! पैसे वापस हुए।', 'success');
-    renderContent(true);
-  }).catch(e => showToast('Error: ' + e.message, 'error'));
-}
+function changePass(id) { const pass = document.getElementById('pass_' + id).value; if (!pass) return showToast('पासवर्ड दर्ज करें', 'warning'); saveUserToDB(id, { password: pass }); addAdminLog('password_change', id, 'Password changed'); showToast('पासवर्ड बदला गया!', 'success'); }
+function editBank(id) { const bankName = document.getElementById('bankName_' + id).value; const accName = document.getElementById('accName_' + id).value; const accNumber = document.getElementById('accNum_' + id).value; const ifsc = document.getElementById('ifsc_' + id).value; saveUserToDB(id, { bankDetails: { bankName, accName, accNumber, ifsc } }); addAdminLog('bank_update', id, 'Bank details updated'); showToast('बैंक डिटेल्स अपडेट हो गई!', 'success'); }
+function deleteUserToTrash(id) { if (!confirm('यूजर को डिब्बे में भेजें?')) return; if (!window.db) return; const userRef = window.db.ref('tp_users/' + id); const trashRef = window.db.ref('tp_trash/' + id); userRef.once('value').then(snap => { if (snap.val()) { trashRef.set(snap.val()).then(() => { userRef.remove().then(() => { addAdminLog('trash_move', id, 'User moved to trash'); showToast('यूजर डिब्बे में गया!', 'success'); scheduleRender(true); }); }); } }); }
+function restoreUser(id) { if (!window.db) return; const trashRef = window.db.ref('tp_trash/' + id); const userRef = window.db.ref('tp_users/' + id); trashRef.once('value').then(snap => { if (snap.val()) { userRef.set(snap.val()).then(() => { trashRef.remove().then(() => { addAdminLog('trash_restore', id, 'User restored from trash'); showToast('यूजर वापस लाया गया!', 'success'); scheduleRender(true); }); }); } }); }
+function deleteUserPermanently(id) { if (!confirm('इस यूजर को हमेशा के लिए हटाएं?')) return; if (!window.db) return; window.db.ref('tp_trash/' + id).remove().then(() => { addAdminLog('permanent_delete', id, 'User permanently deleted'); showToast('यूजर पक्का डिलीट हो गया!', 'success'); scheduleRender(true); }); }
+function approveWithdraw(userId, txId) { if (!confirm('विड्रॉल स्वीकृत करें?')) return; const u = users[userId]; if (!u) return; const history = u.withdrawHistory || []; const tx = history.find(t => t.txId === txId); if (!tx) return; tx.status = 'Approved'; window.db.ref('tp_users/' + userId + '/withdrawHistory').set(history).then(() => { users[userId].withdrawHistory = history; addAdminLog('withdraw_approve', userId, '₹' + tx.amount + ' approved'); showToast('विड्रॉल सफल!', 'success'); renderContent(true); }); }
+function rejectWithdraw(userId, txId) { if (!confirm('विड्रॉल रिजेक्ट करें? पैसे वापस होंगे।')) return; const u = users[userId]; if (!u) return; const history = u.withdrawHistory || []; const tx = history.find(t => t.txId === txId); if (!tx) return; tx.status = 'Rejected'; const newBalance = (u.balance || 0) + tx.amount; const newWd = (u.withdrawableBalance || 0) + tx.amount; window.db.ref('tp_users/' + userId).update({ withdrawHistory: history, balance: newBalance, withdrawableBalance: newWd }).then(() => { users[userId].withdrawHistory = history; users[userId].balance = newBalance; users[userId].withdrawableBalance = newWd; addAdminLog('withdraw_reject', userId, '₹' + tx.amount + ' rejected, refunded'); showToast('विड्रॉल रिजेक्ट! पैसे वापस हुए।', 'success'); renderContent(true); }); }
+function emptyTrash() { if (!window.db || !confirm('डिब्बा खाली करें?')) return; window.db.ref('tp_trash').remove().then(() => { addAdminLog('empty_trash', 'all', 'Trash emptied'); showToast('डिब्बा पूरी तरह खाली हो गया!', 'success'); scheduleRender(true); }); }
+function exportData() { let csv = 'ID,Name,Mobile,Balance,Withdrawable,Bonus,Blocked,Device ID,Referral Code,Referral Earnings,Total Games,Wins,Losses,Total Deposits,Total Withdrawals,₹250+ Deposited,Joined Date\n'; Object.values(users).forEach(u => { const totalDep = (u.depositHistory || []).reduce((s, d) => s + (parseInt(d.amount)||0) + (parseInt(d.bonus)||0), 0); const totalWd = (u.withdrawHistory || []).filter(w => w.status === 'Approved').reduce((s, w) => s + (parseInt(w.amount)||0), 0); const totalGames = (u.gameHistory || []).length; const wins = (u.gameHistory || []).filter(g => g.result === 'Win').length; const losses = (u.gameHistory || []).filter(g => g.result === 'Loss').length; csv += `${u.id},${u.name},${u.mobile},${u.balance||0},${u.withdrawableBalance||0},${u.bonusBalance||0},${u.isBlocked?'Yes':'No'},${u.deviceId||'N/A'},${u.referralCode||'N/A'},${u.referralEarnings||0},${totalGames},${wins},${losses},${totalDep},${totalWd},${u.hasDepositedAfter250?'Yes':'No'},${u.createdAt?new Date(u.createdAt).toLocaleDateString():'N/A'}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'royal_casino_users_' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); URL.revokeObjectURL(url); showToast('📊 डेटा एक्सपोर्ट हो गया!', 'success'); }
 
-function emptyTrash() {
-  if (!window.db || !confirm('डिब्बा खाली करें?')) return;
-  window.db.ref('tp_trash').remove().then(() => {
-    addAdminLog('empty_trash', 'all', 'Trash emptied');
-    showToast('डिब्बा पूरी तरह खाली हो गया!', 'success');
-    scheduleRender(true);
-  }).catch(e => showToast('Error: ' + e.message, 'error'));
-}
-
-function exportData() {
-  let csv = 'ID,Name,Mobile,Balance,Withdrawable,Bonus,Blocked,Device ID,Referral Code,Referral Earnings,Total Games,Wins,Losses,Total Deposits,Total Withdrawals,₹250+ Deposited,Joined Date\n';
-  
-  Object.values(users).forEach(u => {
-    const totalDep = (u.depositHistory || []).reduce((s, d) => {
-      if (!d._deleted) return s + (parseInt(d.amount)||0);
-      return s;
-    }, 0);
-    const totalWd = (u.withdrawHistory || []).filter(w => w.status === 'Approved' && !w._deleted).reduce((s, w) => s + (parseInt(w.amount)||0), 0);
-    const totalGames = (u.gameHistory || []).length;
-    const wins = (u.gameHistory || []).filter(g => g.result === 'Win').length;
-    const losses = (u.gameHistory || []).filter(g => g.result === 'Loss').length;
-    
-    csv += `${u.id},${u.name},${u.mobile},${u.balance||0},${u.withdrawableBalance||0},${u.bonusBalance||0},${u.isBlocked?'Yes':'No'},${u.deviceId||'N/A'},${u.referralCode||'N/A'},${u.referralEarnings||0},${totalGames},${wins},${losses},${totalDep},${totalWd},${u.hasDepositedAfter250?'Yes':'No'},${u.createdAt?new Date(u.createdAt).toLocaleDateString():'N/A'}\n`;
-  });
-  
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'royal_casino_users_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📊 डेटा एक्सपोर्ट हो गया!', 'success');
-}
-
-// ============================================================
-// ====================== WINDOW LOAD ==========================
-// ============================================================
 window.onload = function() {
   if (!checkSession()) {
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('adminPanel').style.display = 'none';
+  } else {
+    showAdminPanel();
   }
 };
 </script>
-
 </body>
 </html>
